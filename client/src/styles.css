@@ -1,20 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 :root {
-  font-family: system-ui, sans-serif;
-  color: #17202a;
-  background: #f4f7f9;
+  /* Brand Colors */
+  --color-primary: #0f172a; /* Slate-Navy */
+  --color-primary-hover: #1e293b;
+  --color-secondary: #006a61; /* Teal */
+  --color-secondary-hover: #005049;
+  --color-secondary-bg: #86f2e4;
+  
+  /* Surfaces & Backgrounds */
+  --color-background: #f8f9ff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-surface-muted: #f8fafc;
+  
+  /* Text */
+  --color-text-primary: #0b1c30;
+  --color-text-secondary: #45464d;
+  --color-text-placeholder: #94a3b8;
+  --color-text-inverse: #ffffff;
+  
+  /* Borders */
+  --color-border: #e2e8f0;
+  --color-border-focus: #0f172a;
+  
+  /* Semantic Status Colors */
+  --color-status-pending-text: #271901;
+  --color-status-pending-bg: #fcdeb5;
+  
+  --color-status-approved-text: #005049;
+  --color-status-approved-bg: #89f5e7;
+  
+  --color-status-rejected-text: #93000a;
+  --color-status-rejected-bg: #ffdad6;
+  
+  --color-status-cancelled-text: #45464d;
+  --color-status-cancelled-bg: #e2e8f0;
+  
+  /* Typography */
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-label: 'JetBrains Mono', monospace;
+  
+  /* Rounding */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-pill: 9999px;
+  
+  /* Elevation */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Buttons, Inputs */
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05); /* Dropdowns, Popovers */
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.1); /* Modals */
+  
+  /* Spacing */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+}
+
+/* Reset & Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-main {
-  max-width: 48rem;
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: 2rem; letter-spacing: -0.02em; font-weight: 700; }
+h2 { font-size: 1.5rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.25rem; }
+
+a {
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--color-secondary-hover);
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Utilities */
+.container {
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 6rem 1.5rem;
+  padding: 0 var(--spacing-6);
 }
 
-p {
-  color: #2f7d76;
-  font-weight: 700;
+@media (min-width: 1280px) {
+  .container {
+    padding: 0 var(--spacing-10);
+  }
+}
+
+.text-label {
+  font-family: var(--font-label);
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 500;
+}
+
+.text-label-sm {
+  font-family: var(--font-label);
+  font-size: 0.6875rem; /* 11px */
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Layout Utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: var(--spacing-2); }
+.gap-4 { gap: var(--spacing-4); }
+.gap-6 { gap: var(--spacing-6); }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.flex-1 { flex: 1; }
+
+/* Application Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  height: 64px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-6);
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-8);
 }
