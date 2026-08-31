@@ -2,22 +2,18 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
-// Layouts
 import AuthLayout from './layouts/AuthLayout';
 import UserLayout from './layouts/UserLayout';
 import AdminLayout from './layouts/AdminLayout';
 
-// Auth Pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 
-// User Pages
 import Dashboard from './pages/user/Dashboard';
 import BrowseResources from './pages/user/BrowseResources';
 import MyBookings from './pages/user/MyBookings';
 import MyCalendar from './pages/user/MyCalendar';
 
-// Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ResourceManagement from './pages/admin/ResourceManagement';
 import BookingManagement from './pages/admin/BookingManagement';

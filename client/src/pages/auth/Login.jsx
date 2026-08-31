@@ -87,12 +87,6 @@ export default function Login() {
       <div style={{ marginTop: 'var(--spacing-6)', textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
         Don't have an account? <Link to="/register" style={{ fontWeight: '500' }}>Register here</Link>
       </div>
-      
-      <div style={{ marginTop: 'var(--spacing-6)', padding: 'var(--spacing-4)', backgroundColor: 'var(--color-surface-muted)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-        <p style={{ marginBottom: '4px' }}><strong>Demo Accounts:</strong></p>
-        <p style={{ margin: 0 }}>Admin: admin@rbs.com / admin123</p>
-        <p style={{ margin: 0 }}>User: user@rbs.com / user123</p>
-      </div>
     </div>
   );
 }
