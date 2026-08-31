@@ -85,3 +85,15 @@ export async function updateBookingStatus(id, status) {
   );
   return result.rows[0] || null;
 }
+
+export async function findBookingsByResourceId(resourceId) {
+  const result = await pool.query(
+    `SELECT b.id, b.start_time, b.end_time, b.status, b.purpose, b.user_id, u.name as user_name
+     FROM bookings b
+     JOIN users u ON u.id = b.user_id
+     WHERE b.resource_id = $1 AND b.status IN ('PENDING', 'APPROVED')
+     ORDER BY b.start_time ASC`,
+    [resourceId]
+  );
+  return result.rows;
+}

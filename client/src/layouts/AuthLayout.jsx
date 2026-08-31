@@ -1,10 +1,13 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/ui/Card';
 
 export default function AuthLayout() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+  const isRegisterPage = location.pathname === '/register';
 
   if (loading) {
     return (
@@ -20,6 +23,39 @@ export default function AuthLayout() {
       return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/app/dashboard" replace />;
+  }
+
+  if (isLoginPage || isRegisterPage) {
+    return (
+      <div className="auth-page">
+        <div className={`auth-panel ${isLoginPage ? 'is-login' : 'is-register'}`}>
+          
+          <main className="auth-form-panel">
+            <div className="auth-form-shell">
+              <Outlet />
+            </div>
+          </main>
+
+          <aside className="auth-visual-panel" aria-label="Brand panel">
+            <div className="auth-visual-panel-inner">
+              <h1 className="auth-brand-title">
+                RBS <span>Enterprise</span>
+              </h1>
+              <p className="auth-brand-subtitle">Resource Booking System</p>
+
+              <div className="auth-brand-divider" aria-hidden="true" />
+
+              <p className="auth-brand-tagline">
+                Streamline your resource management and booking experience
+              </p>
+            </div>
+
+            <div className="auth-brand-footer">© 2026 RBS Enterprise. All rights reserved.</div>
+          </aside>
+
+        </div>
+      </div>
+    );
   }
 
   return (

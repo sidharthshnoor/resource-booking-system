@@ -78,6 +78,8 @@ export default function BookingManagement() {
               const startDate = new Date(booking.start_time);
               const endDate = new Date(booking.end_time);
               const isPending = booking.status === 'PENDING';
+              const isPast = endDate <= new Date();
+              const displayStatus = (booking.status === 'APPROVED' && isPast) ? 'COMPLETED' : booking.status;
 
               return (
                 <TableRow key={booking.id} style={{ backgroundColor: isPending ? 'var(--color-status-pending-bg)' : 'transparent' }}>
@@ -98,7 +100,7 @@ export default function BookingManagement() {
                   </TableCell>
                   <TableCell>{booking.purpose}</TableCell>
                   <TableCell>
-                    <Badge status={booking.status} />
+                    <Badge status={displayStatus} />
                   </TableCell>
                   <TableCell>
                     {isPending && (

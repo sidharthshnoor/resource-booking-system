@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,7 +27,7 @@ export default function Login() {
 
     setLoading(true);
     setError('');
-    
+
     try {
       const user = await login(formData);
       if (user.role === 'ADMIN') {
@@ -42,50 +43,96 @@ export default function Login() {
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: 'var(--spacing-6)', textAlign: 'center' }}>
-        <h3 style={{ margin: 0 }}>Sign in to your account</h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-2)', fontSize: '0.875rem' }}>
-          Enter your email and password to access the system
-        </p>
+    <div className="login-form-wrap">
+      <div className="login-header-block">
+        <h2 className="login-title">Welcome Back</h2>
+        <p className="login-subtitle">Sign in to your account to continue</p>
       </div>
 
       {error && (
-        <div style={{ padding: 'var(--spacing-3)', backgroundColor: 'var(--color-status-rejected-bg)', color: 'var(--color-status-rejected-text)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-4)', fontSize: '0.875rem' }}>
+        <div className="login-error-banner" role="alert">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input 
-          label="Email Address"
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="admin@rbs.com"
-          required
-        />
-        
-        <Input 
-          label="Password"
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="••••••••"
-          required
-        />
+      <form onSubmit={handleSubmit} className="login-form">
+        <div className="login-field-group">
+          <label htmlFor="email" className="login-label">Email Address</label>
+          <div className="login-input-shell">
+            <span className="login-input-icon" aria-hidden="true">
+              <Mail size={18} />
+            </span>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+              className="login-input"
+              autoComplete="email"
+              required
+            />
+          </div>
+        </div>
 
-        <div style={{ marginTop: 'var(--spacing-2)' }}>
-          <Button type="submit" fullWidth isLoading={loading}>
-            Sign In
+        <div className="login-field-group">
+          <label htmlFor="password" className="login-label">Password</label>
+          <div className="login-input-shell login-password-shell">
+            <span className="login-input-icon" aria-hidden="true">
+              <Lock size={18} />
+            </span>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              className="login-input"
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="login-password-toggle"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+
+        <div className="login-options flex items-center justify-between" style={{ marginTop: '-4px', marginBottom: '8px' }}>
+          <label className="flex items-center gap-2" style={{ cursor: 'pointer', fontSize: '0.85rem', color: '#4b5563' }}>
+            <input type="checkbox" className="custom-checkbox" style={{ width: '16px', height: '16px', accentColor: '#006a61' }} />
+            Remember me
+          </label>
+          <a href="#" className="forgot-password-link" style={{ fontSize: '0.85rem', color: '#006a61', textDecoration: 'none' }}>Forgot password?</a>
+        </div>
+
+        <div className="login-form-actions">
+          <Button type="submit" fullWidth isLoading={loading} className="login-submit-button">
+            <ArrowRight size={18} />
+            <span>Sign In</span>
           </Button>
         </div>
       </form>
 
-      <div style={{ marginTop: 'var(--spacing-6)', textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-        Don't have an account? <Link to="/register" style={{ fontWeight: '500' }}>Register here</Link>
+      <div className="login-divider"><span>or</span></div>
+
+      <button
+        type="button"
+        className="login-secondary-button"
+        onClick={() => navigate('/register')}
+      >
+        <UserPlus size={18} />
+        <span>Create an account</span>
+      </button>
+
+      <div className="login-account-link">
+        Don&apos;t have an account? <Link to="/register">Register here</Link>
       </div>
     </div>
   );

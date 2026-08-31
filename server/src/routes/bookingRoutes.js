@@ -3,7 +3,8 @@ import {
   cancelBookingHandler,
   createBookingHandler,
   getBooking,
-  listBookings
+  listBookings,
+  listResourceBookings
 } from '../controllers/bookingController.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 
@@ -11,6 +12,7 @@ const bookingRoutes = Router();
 
 bookingRoutes.use(requireAuth);
 bookingRoutes.get('/', listBookings);
+bookingRoutes.get('/resource/:id', listResourceBookings);
 bookingRoutes.post('/', createBookingHandler);
 bookingRoutes.get('/:id', getBooking);
 bookingRoutes.delete('/:id', cancelBookingHandler);

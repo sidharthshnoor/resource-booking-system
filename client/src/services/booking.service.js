@@ -43,6 +43,20 @@ const bookingService = {
     return api.get('/bookings');
   },
 
+  async getResourceBookings(resourceId) {
+    if (USE_MOCK) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const resBookings = _mockBookings.filter(
+            b => b.resource_id === resourceId && (b.status === 'PENDING' || b.status === 'APPROVED')
+          );
+          resolve({ bookings: resBookings });
+        }, 500);
+      });
+    }
+    return api.get(`/bookings/resource/${resourceId}`);
+  },
+
   async createBooking(bookingData) {
     if (USE_MOCK) {
       return new Promise((resolve, reject) => {

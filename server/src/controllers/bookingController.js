@@ -5,7 +5,8 @@ import {
   findBookingById,
   findBookingsByUserId,
   findAllBookings,
-  updateBookingStatus
+  updateBookingStatus,
+  findBookingsByResourceId
 } from '../models/bookingModel.js';
 
 function errorResponse(response, status, message) {
@@ -139,5 +140,17 @@ export async function changeBookingStatus(request, response) {
       return errorResponse(response, 409, 'The booking conflicts with another pending or approved booking.');
     }
     return errorResponse(response, 500, 'Unable to update booking status at this time.');
+  }
+}
+
+export async function listResourceBookings(request, response) {
+  const resourceId = parseId(request.params.id);
+  if (!resourceId) return errorResponse(response, 400, 'Resource ID must be a positive integer.');
+
+  try {
+    const bookings = await findBookingsByResourceId(resourceId);
+    return response.json({ success: true, bookings });
+  } catch (_error) {
+    return errorResponse(response, 500, 'Unable to retrieve resource bookings at this time.');
   }
 }

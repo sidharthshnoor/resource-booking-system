@@ -24,9 +24,10 @@ export default function Dashboard() {
         ]);
         
         // Show only upcoming/recent
+        const now = new Date();
         const sorted = bookingsRes.bookings
+          .filter(b => b.status !== 'CANCELLED' && new Date(b.end_time) > now)
           .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-          .filter(b => b.status !== 'CANCELLED')
           .slice(0, 3);
           
         setRecentBookings(sorted);

@@ -70,7 +70,10 @@ export default function MyBookings() {
               const res = resources[booking.resource_id];
               const startDate = new Date(booking.start_time);
               const endDate = new Date(booking.end_time);
-              const canCancel = booking.status === 'PENDING' || booking.status === 'APPROVED';
+              const isPast = endDate <= new Date();
+              
+              const canCancel = (booking.status === 'PENDING' || booking.status === 'APPROVED') && !isPast;
+              const displayStatus = (booking.status === 'APPROVED' && isPast) ? 'COMPLETED' : booking.status;
 
               return (
                 <TableRow key={booking.id}>
@@ -84,7 +87,7 @@ export default function MyBookings() {
                   </TableCell>
                   <TableCell>{booking.purpose}</TableCell>
                   <TableCell>
-                    <Badge status={booking.status} />
+                    <Badge status={displayStatus} />
                   </TableCell>
                   <TableCell>
                     {canCancel && (

@@ -42,6 +42,13 @@ export default function Badge({ status, className = '' }) {
         color: 'var(--color-status-cancelled-text)'
       };
       break;
+    case 'COMPLETED':
+    case 'DONE':
+      colors = {
+        backgroundColor: 'var(--color-surface-muted)',
+        color: 'var(--color-text-placeholder)'
+      };
+      break;
     default:
       colors = {
         backgroundColor: 'var(--color-border)',
