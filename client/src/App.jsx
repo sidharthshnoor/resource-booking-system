@@ -8,6 +8,7 @@ import AdminLayout from './layouts/AdminLayout';
 
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import Landing from './pages/Landing';
 
 import Dashboard from './pages/user/Dashboard';
 import BrowseResources from './pages/user/BrowseResources';
@@ -24,6 +25,9 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Landing Page */}
+          <Route path="/" element={<Landing />} />
+
           {/* Public / Auth Routes */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />

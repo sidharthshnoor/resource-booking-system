@@ -104,21 +104,47 @@ export default function BookingManagement() {
                   </TableCell>
                   <TableCell>
                     {isPending && (
-                      <div className="flex gap-2">
-                        <Button 
+                      <div className="flex gap-4">
+                        <button 
                           onClick={() => handleAction(booking.id, 'approve')}
-                          style={{ padding: '4px 8px', minWidth: 0, backgroundColor: 'var(--color-success)', color: 'white' }}
-                          title="Approve"
+                          title="Approve booking"
+                          aria-label="Approve booking"
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: 0, 
+                            cursor: 'pointer',
+                            color: 'var(--color-success, #008a00)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'transform 0.2s ease, opacity 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)'; e.currentTarget.style.opacity = '0.8'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.opacity = '1'; }}
                         >
-                          <Check size={16} />
-                        </Button>
-                        <Button 
+                          <Check size={24} strokeWidth={3} />
+                        </button>
+                        <button 
                           onClick={() => handleAction(booking.id, 'reject')}
-                          style={{ padding: '4px 8px', minWidth: 0, backgroundColor: 'var(--color-error)', color: 'white' }}
-                          title="Reject"
+                          title="Reject booking"
+                          aria-label="Reject booking"
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: 0, 
+                            cursor: 'pointer',
+                            color: 'var(--color-error, #d32f2f)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'transform 0.2s ease, opacity 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)'; e.currentTarget.style.opacity = '0.8'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.opacity = '1'; }}
                         >
-                          <X size={16} />
-                        </Button>
+                          <X size={24} strokeWidth={3} />
+                        </button>
                       </div>
                     )}
                   </TableCell>

@@ -288,12 +288,12 @@ button {
 }
 
 .auth-visual-panel::before {
-  background: linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 60%, #ffffff 100%);
+  background: linear-gradient(to right, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 75%, #ffffff 100%);
   opacity: 0;
 }
 
 .auth-visual-panel::after {
-  background: linear-gradient(to left, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 60%, #ffffff 100%);
+  background: linear-gradient(to left, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 75%, #ffffff 100%);
   opacity: 0;
 }
 
@@ -633,4 +633,22 @@ button {
   .login-secondary-button {
     height: 50px;
   }
+}
+
+
+/* Global breathing animation */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--c-navy);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  animation: page-breathe 8s ease-in-out infinite;
+}
+
+@keyframes page-breathe {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.04; }
 }
