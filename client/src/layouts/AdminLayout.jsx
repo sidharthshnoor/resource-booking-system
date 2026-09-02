@@ -1,7 +1,18 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Calendar, Settings, LogOut, User as UserIcon, Users } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  Calendar,
+  ClipboardList,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  User as UserIcon,
+  Users,
+  Warehouse
+} from 'lucide-react';
 
 export default function AdminLayout() {
   const { isAuthenticated, isAdmin, user, logout, loading } = useAuth();
@@ -19,12 +30,32 @@ export default function AdminLayout() {
     return <Navigate to="/app/dashboard" replace />;
   }
 
-  const navItems = [
-    { label: 'Admin Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
-    { label: 'Resource Management', path: '/admin/resources', icon: <Settings size={20} /> },
-    { label: 'Booking Management', path: '/admin/bookings', icon: <Users size={20} /> },
-    { label: 'Admin Calendar', path: '/admin/calendar', icon: <Calendar size={20} /> },
+  const navGroups = [
+    {
+      label: 'Main',
+      items: [
+        { label: 'Admin Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
+        { label: 'Resource Management', path: '/admin/resources', icon: <Warehouse size={18} /> },
+        { label: 'Booking Management', path: '/admin/bookings', icon: <ClipboardList size={18} /> },
+        { label: 'Admin Calendar', path: '/admin/calendar', icon: <Calendar size={18} /> },
+      ]
+    },
+    {
+      label: 'Management',
+      items: [
+        { label: 'User Management', path: '/admin/users', icon: <Users size={18} /> },
+        { label: 'Reports & Analytics', path: '/admin/reports', icon: <BarChart3 size={18} /> },
+        { label: 'Activity Logs', path: '/admin/activity', icon: <Activity size={18} /> },
+      ]
+    },
+    {
+      label: 'System',
+      items: [
+        { label: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> },
+      ]
+    }
   ];
+  const navItems = navGroups.flatMap(group => group.items);
 
   return (
     <div className="app-container">
@@ -34,8 +65,13 @@ export default function AdminLayout() {
           <h2 style={{ color: 'var(--color-text-inverse)', fontSize: '1.25rem' }}>RBS Admin</h2>
         </div>
         
-        <nav style={{ flex: 1, padding: 'var(--spacing-4) 0' }}>
-          {navItems.map(item => {
+        <nav style={{ flex: 1, padding: 'var(--spacing-4) 0', overflowY: 'auto' }}>
+          {navGroups.map(group => (
+            <div key={group.label} style={{ marginBottom: 'var(--spacing-4)' }}>
+              <p className="text-label-sm" style={{ color: 'rgba(255,255,255,0.42)', padding: '0 var(--spacing-6)', marginBottom: 'var(--spacing-2)' }}>
+                {group.label}
+              </p>
+              {group.items.map(item => {
             const isActive = location.pathname.startsWith(item.path);
             const linkStyle = {
               display: 'flex',
@@ -56,7 +92,9 @@ export default function AdminLayout() {
                 {item.label}
               </Link>
             );
-          })}
+              })}
+            </div>
+          ))}
         </nav>
 
         <div style={{ padding: 'var(--spacing-4)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>

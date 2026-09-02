@@ -1,0 +1,15 @@
+import React, { useEffect, useState } from 'react';
+import { BarChart3, CheckCircle, Clock, Layers, XCircle } from 'lucide-react';
+import adminService from '../../services/admin.service';
+import resourceService from '../../services/resource.service';
+import Card from '../../components/ui/Card';
+
+export default function ReportsAnalytics() {
+  const [data, setData] = useState(null);
+  useEffect(() => { Promise.all([adminService.getAllBookings(), resourceService.getAllResources()]).then(([bookings, resources]) => setData({ bookings: bookings.bookings, resources: resources.resources })).catch(console.error); }, []);
+  if (!data) return <div>Loading reports...</div>;
+  const count = status => data.bookings.filter(booking => booking.status === status).length;
+  const topResources = Object.entries(data.bookings.reduce((totals, booking) => ({ ...totals, [booking.resource_id]: (totals[booking.resource_id] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const statCards = [['Total bookings', data.bookings.length, <BarChart3 size={20} />], ['Approved', count('APPROVED'), <CheckCircle size={20} />], ['Pending', count('PENDING'), <Clock size={20} />], ['Rejected', count('REJECTED'), <XCircle size={20} />]];
+  return <div className="flex flex-col gap-6"><div><h1 style={{ marginBottom: 'var(--spacing-2)' }}>Reports &amp; Analytics</h1><p style={{ color: 'var(--color-text-secondary)' }}>Operational insight from your current booking and resource data.</p></div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 'var(--spacing-4)' }}>{statCards.map(([label, value, icon]) => <Card key={label}><div style={{ color: 'var(--color-secondary)', marginBottom: 12 }}>{icon}</div><div className="text-label-sm" style={{ color: 'var(--color-text-secondary)' }}>{label}</div><strong style={{ fontSize: '1.8rem' }}>{value}</strong></Card>)}</div><Card><h3 style={{ marginBottom: 'var(--spacing-4)' }}>Most-used resources</h3>{topResources.length ? topResources.map(([id, total]) => { const resource = data.resources.find(item => String(item.id) === String(id)); return <div key={id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--color-border)' }}><span>{resource?.name || `Resource ${id}`}</span><strong>{total} booking{total === 1 ? '' : 's'}</strong></div>; }) : <p style={{ color: 'var(--color-text-secondary)' }}>No booking activity yet.</p>}</Card><Card><h3 style={{ marginBottom: 'var(--spacing-4)' }}>Resource inventory</h3><div className="flex gap-6"><span><Layers size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />{data.resources.length} total resources</span><span style={{ color: 'var(--color-secondary)' }}>{data.resources.filter(resource => resource.status === 'ACTIVE').length} active</span></div></Card></div>;
+}

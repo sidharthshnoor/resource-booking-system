@@ -19,6 +19,10 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ResourceManagement from './pages/admin/ResourceManagement';
 import BookingManagement from './pages/admin/BookingManagement';
 import AdminCalendar from './pages/admin/AdminCalendar';
+import UserManagement from './pages/admin/UserManagement';
+import ReportsAnalytics from './pages/admin/ReportsAnalytics';
+import ActivityLogs from './pages/admin/ActivityLogs';
+import AdminSettings from './pages/admin/AdminSettings';
 
 export default function App() {
   return (
@@ -50,6 +54,10 @@ export default function App() {
             <Route path="resources" element={<ResourceManagement />} />
             <Route path="bookings" element={<BookingManagement />} />
             <Route path="calendar" element={<AdminCalendar />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="reports" element={<ReportsAnalytics />} />
+            <Route path="activity" element={<ActivityLogs />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
 
           {/* Catch all redirect to login */}

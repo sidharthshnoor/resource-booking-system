@@ -53,6 +53,20 @@ const adminService = {
     return api.put(`/admin/bookings/${id}/reject`);
   },
 
+  async getUsers(filters = {}) {
+    const query = new URLSearchParams(filters).toString();
+    return api.get(`/admin/users${query ? `?${query}` : ''}`);
+  },
+
+  async updateUserStatus(id, status) {
+    if (USE_MOCK) {
+      return new Promise(resolve => {
+        setTimeout(() => resolve({ success: true, user: { id, status } }), 400);
+      });
+    }
+    return api.patch(`/admin/users/${id}/status`, { status });
+  },
+
   // --- Admin Resources ---
   async createResource(resourceData) {
     if (USE_MOCK) {

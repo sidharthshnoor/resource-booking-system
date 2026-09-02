@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { pool } from '../config/database.js';
 import { env } from '../config/env.js';
 import { sanitizeUser } from '../utils/user.js';
+import { updateLastLogin } from '../models/userModel.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,11 +33,14 @@ export async function register(request, response) {
 
   try {
     const existingUser = await pool.query(
-      'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, status FROM users WHERE LOWER(email) = LOWER($1)',
       [email]
     );
 
     if (existingUser.rows.length > 0) {
+      if (existingUser.rows[0].status === 'DEACTIVATED') {
+        return buildError(response, 403, 'This email has been blocked. Please contact the organization.');
+      }
       return buildError(response, 409, 'A user with this email already exists.');
     }
 
@@ -83,11 +87,17 @@ export async function login(request, response) {
       return buildError(response, 401, 'Invalid email or password.');
     }
 
+    if (user.status === 'DEACTIVATED') {
+      return buildError(response, 403, "User doesn't exist. Please contact the organization.");
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
       return buildError(response, 401, 'Invalid email or password.');
     }
+
+    await updateLastLogin(user.id);
 
     const token = jwt.sign(
       { sub: user.id, role: user.role },

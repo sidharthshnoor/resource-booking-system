@@ -55,5 +55,6 @@ export default {
   get: (url) => fetchWithAuth(url, { method: 'GET' }),
   post: (url, data) => fetchWithAuth(url, { method: 'POST', body: JSON.stringify(data) }),
   put: (url, data) => fetchWithAuth(url, { method: 'PUT', body: JSON.stringify(data) }),
+  patch: (url, data) => fetchWithAuth(url, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: (url) => fetchWithAuth(url, { method: 'DELETE' }),
 };
