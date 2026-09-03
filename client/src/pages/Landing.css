@@ -21,6 +21,8 @@ html {
   background-color: var(--c-white);
   line-height: 1.5;
   overflow-x: hidden;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .landing-page * {

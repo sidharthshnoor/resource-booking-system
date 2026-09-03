@@ -120,13 +120,13 @@ button {
 
 .text-label {
   font-family: var(--font-label);
-  font-size: 0.8125rem; /* 13px */
+  font-size: 0.8125rem; 
   font-weight: 500;
 }
 
 .text-label-sm {
   font-family: var(--font-label);
-  font-size: 0.6875rem; /* 11px */
+  font-size: 0.6875rem; 
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 500;
@@ -150,6 +150,7 @@ button {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 .sidebar {
@@ -160,6 +161,55 @@ button {
   flex-direction: column;
   flex-shrink: 0;
   height: 100vh;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 40;
+}
+
+/* Desktop Collapsed State */
+@media (min-width: 1025px) {
+  .sidebar.collapsed {
+    width: 76px;
+  }
+  .sidebar.collapsed .sidebar-text,
+  .sidebar.collapsed .sidebar-header-text,
+  .sidebar.collapsed .sidebar-group-label,
+  .sidebar.collapsed .sidebar-user-info {
+    display: none;
+  }
+  .sidebar.collapsed .sidebar-nav-item {
+    justify-content: center;
+    padding: var(--spacing-3);
+  }
+}
+
+/* Mobile Sidebar Drawer */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    width: 280px;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-overlay {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .sidebar-overlay.mobile-open {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.4);
+    z-index: 30;
+    backdrop-filter: blur(2px);
+    transition: opacity 0.3s ease;
+  }
 }
 
 .main-content {
@@ -181,6 +231,7 @@ button {
   display: flex;
   align-items: center;
   padding: 0 var(--spacing-6);
+  gap: var(--spacing-4);
 }
 
 .page-content {
@@ -189,6 +240,15 @@ button {
   padding: var(--spacing-8);
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: var(--spacing-4);
+  }
+  .topbar {
+    padding: 0 var(--spacing-4);
+  }
 }
 
 .page-content::-webkit-scrollbar {
