@@ -137,6 +137,31 @@ const authService = {
   logout() {
     localStorage.removeItem('rbs_token');
     _mockCurrentUser = null;
+  },
+
+  async inviteUser(email) {
+    if (USE_MOCK) return { success: true };
+    return api.post('/auth/invite', { email });
+  },
+
+  async createAccount(data) {
+    if (USE_MOCK) return { success: true };
+    return api.post('/auth/create-account', data);
+  },
+
+  async forgotPassword(email) {
+    if (USE_MOCK) return { success: true, message: 'If an account exists for this email, a password reset link has been sent.' };
+    return api.post('/auth/forgot-password', { email });
+  },
+
+  async resendReset(email) {
+    if (USE_MOCK) return { success: true, message: 'If an account exists for this email, a password reset link has been sent.' };
+    return api.post('/auth/resend-reset', { email });
+  },
+
+  async resetPassword(data) {
+    if (USE_MOCK) return { success: true };
+    return api.post('/auth/reset-password', data);
   }
 };
 

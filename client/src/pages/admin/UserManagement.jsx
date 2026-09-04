@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Download, Plus } from 'lucide-react';
+import { Search, Download, Plus, X, Trash2 } from 'lucide-react';
 import adminService from '../../services/admin.service';
+import authService from '../../services/auth.service';
 import { useAuth } from '../../context/AuthContext';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -13,6 +14,13 @@ export default function UserManagement() {
   const [joinedSort, setJoinedSort] = useState('newest');
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [inviteSuccess, setInviteSuccess] = useState('');
 
   const fetchUsers = async () => {
     try {
@@ -76,6 +84,23 @@ export default function UserManagement() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await adminService.deleteUser(deleteTarget.id);
+      if (res.success) {
+        alert("User deleted successfully.");
+        setDeleteTarget(null);
+        fetchUsers();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete user.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Name,Email,Role,Status,Bookings,Joined\n"
@@ -100,6 +125,24 @@ export default function UserManagement() {
     return (parts[0]?.[0] || '?').toUpperCase();
   };
 
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setIsInviting(true);
+    setInviteError('');
+    setInviteSuccess('');
+    try {
+      await authService.inviteUser(inviteEmail);
+      setInviteSuccess('Invitation sent successfully!');
+      setInviteEmail('');
+      setTimeout(() => setShowInviteModal(false), 2000);
+    } catch (err) {
+      setInviteError(err.response?.data?.message || 'Failed to send invitation.');
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6" style={{ maxWidth: '1200px', margin: '0 auto' }}>
       
@@ -110,7 +153,7 @@ export default function UserManagement() {
           <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Review registered users and their booking activity.</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#0d9488', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+          <button onClick={() => { setShowInviteModal(true); setInviteError(''); setInviteSuccess(''); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#0d9488', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: 500, border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
             <Plus size={16} /> Invite User
           </button>
           <button onClick={handleExport} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', color: '#334155', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
@@ -284,27 +327,47 @@ export default function UserManagement() {
                         )}
                       </td>
                       <td style={{ padding: '1rem 1.25rem' }}>
-                        {currentUser?.id === user.id ? (
-                          <span style={{ fontSize: '0.75rem', color: '#94a3b8', padding: '6px 0' }}>Current Admin</span>
+                        {currentUser?.id === user.id || user.role === 'ADMIN' ? (
+                          <span style={{ fontSize: '0.75rem', color: '#94a3b8', padding: '6px 0' }}>{currentUser?.id === user.id ? 'Current Admin' : 'Admin'}</span>
                         ) : (
-                          <button 
-                            onClick={() => toggleStatus(user)}
-                            disabled={processingId === user.id}
-                            style={{
-                              padding: '4px 12px',
-                              borderRadius: '0.375rem',
-                              border: user.status === 'ACTIVE' ? '1px solid #fdba74' : '1px solid #6ee7b7',
-                              background: 'white',
-                              fontSize: '0.75rem',
-                              fontWeight: 500,
-                              cursor: processingId === user.id ? 'not-allowed' : 'pointer',
-                              opacity: processingId === user.id ? 0.5 : 1,
-                              color: user.status === 'ACTIVE' ? '#ea580c' : '#059669',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            {user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button 
+                              onClick={() => toggleStatus(user)}
+                              disabled={processingId === user.id}
+                              style={{
+                                padding: '4px 12px',
+                                borderRadius: '0.375rem',
+                                border: user.status === 'ACTIVE' ? '1px solid #fdba74' : '1px solid #6ee7b7',
+                                background: 'white',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                cursor: processingId === user.id ? 'not-allowed' : 'pointer',
+                                opacity: processingId === user.id ? 0.5 : 1,
+                                color: user.status === 'ACTIVE' ? '#ea580c' : '#059669',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              {user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              title="Delete User"
+                              onClick={() => setDeleteTarget(user)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '6px',
+                                borderRadius: '0.375rem',
+                                border: '1px solid #fecaca',
+                                background: '#fef2f2',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -322,6 +385,71 @@ export default function UserManagement() {
           </div>
         )}
       </div>
+
+      {showInviteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '0.5rem', width: '100%', maxWidth: '400px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>Invite User</h3>
+              <button onClick={() => setShowInviteModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleInvite} style={{ padding: '1.5rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#334155', marginBottom: '0.5rem' }}>Email Address</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={e => setInviteEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  required
+                  style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.375rem', outline: 'none', fontSize: '0.875rem' }}
+                />
+              </div>
+              
+              {inviteError && <div style={{ background: '#fef2f2', color: '#b91c1c', padding: '0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', marginBottom: '1.5rem' }}>{inviteError}</div>}
+              {inviteSuccess && <div style={{ background: '#ecfdf5', color: '#059669', padding: '0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', marginBottom: '1.5rem' }}>{inviteSuccess}</div>}
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" onClick={() => setShowInviteModal(false)} style={{ padding: '0.5rem 1rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', color: '#334155', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={isInviting || !inviteEmail} style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', background: '#0d9488', color: 'white', fontSize: '0.875rem', fontWeight: 500, cursor: isInviting ? 'not-allowed' : 'pointer', opacity: (isInviting || !inviteEmail) ? 0.7 : 1 }}>
+                  {isInviting ? 'Sending...' : 'Send Invitation'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '0.5rem', width: '100%', maxWidth: '450px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>Delete User?</h3>
+              <button onClick={() => setDeleteTarget(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+            </div>
+            <div style={{ padding: '1.5rem' }}>
+              <p style={{ color: '#334155', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                Are you sure you want to permanently delete:
+              </p>
+              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
+                <div style={{ fontWeight: 600, color: '#0f172a' }}>Name: {deleteTarget.name}</div>
+                <div style={{ color: '#64748b', fontSize: '0.875rem' }}>Email: {deleteTarget.email}</div>
+              </div>
+              <p style={{ color: '#ef4444', fontSize: '0.875rem', margin: 0 }}>
+                This action cannot be undone. All data associated with this user will be permanently removed.
+              </p>
+            </div>
+            <div style={{ padding: '1rem 1.5rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderBottomLeftRadius: '0.5rem', borderBottomRightRadius: '0.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button onClick={() => setDeleteTarget(null)} disabled={isDeleting} style={{ padding: '0.5rem 1rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', color: '#334155', fontSize: '0.875rem', fontWeight: 500, cursor: isDeleting ? 'not-allowed' : 'pointer', opacity: isDeleting ? 0.7 : 1 }}>
+                Cancel
+              </button>
+              <button onClick={confirmDelete} disabled={isDeleting} style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '0.375rem', background: '#ef4444', color: 'white', fontSize: '0.875rem', fontWeight: 500, cursor: isDeleting ? 'not-allowed' : 'pointer', opacity: isDeleting ? 0.7 : 1 }}>
+                {isDeleting ? 'Deleting...' : 'Delete User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -67,6 +67,15 @@ const adminService = {
     return api.patch(`/admin/users/${id}/status`, { status });
   },
 
+  async deleteUser(id) {
+    if (USE_MOCK) {
+      return new Promise(resolve => {
+        setTimeout(() => resolve({ success: true }), 400);
+      });
+    }
+    return api.delete(`/admin/users/${id}`);
+  },
+
   // --- Admin Resources ---
   async createResource(resourceData) {
     if (USE_MOCK) {

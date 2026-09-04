@@ -1,4 +1,4 @@
-import { findUsers, updateUserStatus as updateStatusInDb } from '../models/userModel.js';
+import { findUsers, updateUserStatus as updateStatusInDb, getUserById, deleteUserById } from '../models/userModel.js';
 
 const validRoles = new Set(['USER', 'ADMIN']);
 
@@ -29,5 +29,31 @@ export async function updateUserStatus(request, response) {
     return response.json({ success: true, user: updatedUser });
   } catch (_error) {
     return response.status(500).json({ success: false, message: 'Unable to update user status.' });
+  }
+}
+
+export async function deleteUser(request, response) {
+  const { id } = request.params;
+  const currentUserId = request.user?.id; // Assuming authMiddleware sets request.user
+
+  if (String(id) === String(currentUserId)) {
+    return response.status(403).json({ success: false, message: 'You cannot delete your own account.' });
+  }
+
+  try {
+    const userToDel = await getUserById(id);
+    if (!userToDel) {
+      return response.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    if (userToDel.role === 'ADMIN') {
+      return response.status(403).json({ success: false, message: 'Admin users cannot be deleted.' });
+    }
+
+    await deleteUserById(id, userToDel.email);
+    return response.json({ success: true, message: 'User deleted successfully.' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return response.status(500).json({ success: false, message: 'Unable to delete user.' });
   }
 }

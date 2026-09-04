@@ -1,9 +1,11 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { pool } from '../config/database.js';
 import { env } from '../config/env.js';
 import { sanitizeUser } from '../utils/user.js';
 import { updateLastLogin } from '../models/userModel.js';
+import { sendInvitationEmail, sendPasswordResetEmail } from '../utils/email.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -120,4 +122,231 @@ export function getCurrentUser(request, response) {
     success: true,
     user: request.user
   });
+}
+
+// Helper to hash tokens
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+export async function inviteUser(request, response) {
+  const email = typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : '';
+
+  if (!email || !emailPattern.test(email)) {
+    return buildError(response, 400, 'Please provide a valid email address.');
+  }
+
+  try {
+    const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return buildError(response, 409, 'A user with this email already exists.');
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashToken(rawToken);
+    
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await pool.query(
+      `INSERT INTO auth_tokens (type, email, token_hash, expires_at)
+       VALUES ('INVITATION', $1, $2, $3)`,
+      [email, tokenHash, expiresAt]
+    );
+
+    await sendInvitationEmail(email, rawToken);
+
+    return response.json({ success: true, message: 'Invitation sent successfully.' });
+  } catch (error) {
+    console.error('Invite Error:', error);
+    return buildError(response, 500, 'Unable to invite user at this time.');
+  }
+}
+
+export async function createAccount(request, response) {
+  const { token, name, password } = request.body;
+  
+  if (!token || !name || !password) {
+    return buildError(response, 400, 'Missing required fields.');
+  }
+
+  if (password.length < 8) {
+    return buildError(response, 400, 'Password must be at least 8 characters long.');
+  }
+
+  try {
+    const tokenHash = hashToken(token);
+    const tokenResult = await pool.query(
+      `SELECT id, email, expires_at, used_at FROM auth_tokens 
+       WHERE token_hash = $1 AND type = 'INVITATION'`,
+      [tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return buildError(response, 400, 'Invalid invitation link.');
+    }
+
+    const invite = tokenResult.rows[0];
+
+    if (invite.used_at) {
+      return buildError(response, 400, 'Invitation link has already been used.');
+    }
+
+    if (new Date() > new Date(invite.expires_at)) {
+      return buildError(response, 400, 'Invitation link has expired.');
+    }
+
+    // Double check email isn't already taken just in case
+    const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [invite.email]);
+    if (existingUser.rows.length > 0) {
+      return buildError(response, 409, 'A user with this email already exists.');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await pool.query('BEGIN');
+    
+    await pool.query(
+      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
+      [name, invite.email, passwordHash]
+    );
+
+    await pool.query(
+      'UPDATE auth_tokens SET used_at = NOW() WHERE id = $1',
+      [invite.id]
+    );
+
+    await pool.query('COMMIT');
+
+    return response.status(201).json({ success: true, message: 'Account created successfully.' });
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    console.error('Create Account Error:', error);
+    return buildError(response, 500, 'Unable to create account.');
+  }
+}
+
+export async function forgotPassword(request, response) {
+  const email = typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : '';
+  
+  if (!email || !emailPattern.test(email)) {
+    return response.json({ success: true, message: 'If an account exists for this email, a password reset link has been sent.' });
+  }
+
+  try {
+    const userResult = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 AND status != \'DEACTIVATED\'', [email]);
+    
+    if (userResult.rows.length > 0) {
+      const user = userResult.rows[0];
+      
+      const rateLimitResult = await pool.query(
+        `SELECT created_at FROM auth_tokens 
+         WHERE type = 'PASSWORD_RESET' AND user_id = $1 
+         ORDER BY created_at DESC LIMIT 1`,
+        [user.id]
+      );
+
+      if (rateLimitResult.rows.length > 0) {
+        const lastCreated = new Date(rateLimitResult.rows[0].created_at);
+        if (Date.now() - lastCreated.getTime() < 60000) {
+          // It's less than a minute, return generic success but don't send email
+          return response.json({ success: true, message: 'If an account exists for this email, a password reset link has been sent.' });
+        }
+      }
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = hashToken(rawToken);
+      const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+
+      // Invalidate existing active reset tokens
+      await pool.query(
+        `UPDATE auth_tokens SET used_at = NOW() 
+         WHERE type = 'PASSWORD_RESET' AND user_id = $1 AND used_at IS NULL`,
+        [user.id]
+      );
+
+      await pool.query(
+        `INSERT INTO auth_tokens (type, email, user_id, token_hash, expires_at)
+         VALUES ('PASSWORD_RESET', $1, $2, $3, $4)`,
+        [email, user.id, tokenHash, expiresAt]
+      );
+
+      // Send email but don't crash if it fails, just log it securely
+      sendPasswordResetEmail(email, rawToken).catch(err => {
+        console.error('Failed to send password reset email (technical issue):', err);
+      });
+    }
+
+    return response.json({ success: true, message: 'If an account exists for this email, a password reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    return response.json({ success: true, message: 'If an account exists for this email, a password reset link has been sent.' });
+  }
+}
+
+export async function resendReset(request, response) {
+  const email = typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : '';
+
+  if (!email || !emailPattern.test(email)) {
+    return response.json({ success: true, message: 'If an account exists for this email, a password reset link has been sent.' });
+  }
+
+  // The logic is exactly the same as forgot password, we just reuse it
+  return forgotPassword(request, response);
+}
+
+export async function resetPassword(request, response) {
+  const { token, password } = request.body;
+  
+  if (!token || !password) {
+    return buildError(response, 400, 'Missing required fields.');
+  }
+
+  if (password.length < 8) {
+    return buildError(response, 400, 'Password must be at least 8 characters long.');
+  }
+
+  try {
+    const tokenHash = hashToken(token);
+    const tokenResult = await pool.query(
+      `SELECT id, user_id, expires_at, used_at FROM auth_tokens 
+       WHERE token_hash = $1 AND type = 'PASSWORD_RESET'`,
+      [tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return buildError(response, 400, 'Invalid password reset link.');
+    }
+
+    const resetToken = tokenResult.rows[0];
+
+    if (resetToken.used_at) {
+      return buildError(response, 400, 'This password reset link has already been used.');
+    }
+
+    if (new Date() > new Date(resetToken.expires_at)) {
+      return buildError(response, 400, 'This password reset link has expired.');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await pool.query('BEGIN');
+    
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [passwordHash, resetToken.user_id]
+    );
+
+    await pool.query(
+      'UPDATE auth_tokens SET used_at = NOW() WHERE id = $1',
+      [resetToken.id]
+    );
+
+    await pool.query('COMMIT');
+
+    return response.json({ success: true, message: 'Password updated successfully.' });
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    console.error('Reset Password Error:', error);
+    return buildError(response, 500, 'Unable to reset password.');
+  }
 }

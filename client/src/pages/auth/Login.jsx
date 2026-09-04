@@ -109,7 +109,7 @@ export default function Login() {
             <input type="checkbox" className="custom-checkbox" style={{ width: '16px', height: '16px', accentColor: '#006a61' }} />
             Remember me
           </label>
-          <a href="#" className="forgot-password-link" style={{ fontSize: '0.85rem', color: '#006a61', textDecoration: 'none' }}>Forgot password?</a>
+          <Link to="/forgot-password" className="forgot-password-link" style={{ fontSize: '0.85rem', color: '#006a61', textDecoration: 'none' }}>Forgot password?</Link>
         </div>
 
         <div className="login-form-actions">

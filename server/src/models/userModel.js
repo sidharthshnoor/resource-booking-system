@@ -33,3 +33,32 @@ export async function updateUserStatus(id, status) {
   );
   return result.rows[0];
 }
+
+export async function getUserById(id) {
+  const result = await pool.query('SELECT id, name, email, role, status FROM users WHERE id = $1', [id]);
+  return result.rows[0];
+}
+
+export async function deleteUserById(id, email) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Clean up auth tokens associated with this user (by id or email)
+    await client.query('DELETE FROM auth_tokens WHERE user_id = $1 OR LOWER(email) = LOWER($2)', [id, email]);
+    
+    // Clean up bookings associated with this user
+    await client.query('DELETE FROM bookings WHERE user_id = $1', [id]);
+    
+    // Finally, delete the user
+    await client.query('DELETE FROM users WHERE id = $1', [id]);
+    
+    await client.query('COMMIT');
+    return true;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
