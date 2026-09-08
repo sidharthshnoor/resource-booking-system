@@ -27,7 +27,7 @@ export async function requireAuth(request, response, next) {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, role, created_at, updated_at FROM users WHERE id = $1',
+      'SELECT id, name, email, role, organization_id, created_at, updated_at FROM users WHERE id = $1',
       [payload.sub]
     );
 
@@ -53,6 +53,16 @@ export function requireAdmin(request, response, next) {
     return response.status(403).json({
       success: false,
       message: 'Access denied. Administrator privileges required.'
+    });
+  }
+  return next();
+}
+
+export function requireSuperAdmin(request, response, next) {
+  if (!request.user || request.user.role !== 'SUPER_ADMIN') {
+    return response.status(403).json({
+      success: false,
+      message: 'Access denied. Super Administrator privileges required.'
     });
   }
   return next();

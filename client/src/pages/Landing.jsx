@@ -1130,6 +1130,14 @@ export default function Landing() {
         </div>
         <div className="footer-bottom landing-container">
           <p>© 2026 RBS Enterprise. All rights reserved.</p>
+          <Link 
+            to="/super-admin/login" 
+            style={{ fontSize: '0.8125rem', color: 'var(--c-muted-text)', opacity: 0.7, textDecoration: 'none' }}
+            onMouseOver={(e) => e.target.style.opacity = 1}
+            onMouseOut={(e) => e.target.style.opacity = 0.7}
+          >
+            Platform Administration
+          </Link>
         </div>
       </footer>
     </div>

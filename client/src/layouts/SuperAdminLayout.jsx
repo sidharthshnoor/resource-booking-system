@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useOrganization } from '../context/OrganizationContext';
-import { LayoutDashboard, Calendar, Search, LogOut, User as UserIcon, Menu, X } from 'lucide-react';
+import { Building2, LogOut, User as UserIcon, Menu, X, LayoutDashboard } from 'lucide-react';
 
-export default function UserLayout() {
-  const { isAuthenticated, isAdmin, user, logout, loading } = useAuth();
-  const { organization } = useOrganization();
+export default function SuperAdminLayout() {
+  const { isAuthenticated, user, logout, loading } = useAuth();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -17,36 +15,37 @@ export default function UserLayout() {
   }, [location.pathname]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full w-full">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen w-full bg-gray-50 text-gray-600">Loading...</div>;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={`/org/${organization.slug}/login`} replace />;
+    return <Navigate to="/login" replace />;
   }
 
-  if (user.organization_id !== organization.id) {
+  if (user.role !== 'SUPER_ADMIN') {
+    // If they aren't a SUPER_ADMIN, they shouldn't be here.
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center border border-gray-100">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-6">You are not authorized to view this organization's data.</p>
+      <div className="flex h-screen items-center justify-center bg-gray-900 text-white p-8">
+        <div className="max-w-md text-center">
+          <h2 className="text-3xl font-bold text-red-500 mb-4">Access Denied</h2>
+          <p className="text-gray-400 mb-6">Global management interface requires Super Administrator privileges.</p>
+          <button 
+            onClick={logout}
+            className="px-6 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
     );
   }
 
-  if (isAdmin) {
-    return <Navigate to={`/org/${organization.slug}/admin/dashboard`} replace />;
-  }
-
   const navItems = [
-    { label: 'Dashboard', path: `/org/${organization.slug}/app/dashboard`, icon: <LayoutDashboard size={20} /> },
-    { label: 'Browse Resources', path: `/org/${organization.slug}/app/resources`, icon: <Search size={20} /> },
-    { label: 'My Bookings', path: `/org/${organization.slug}/app/bookings`, icon: <Calendar size={20} /> },
-    { label: 'My Calendar', path: `/org/${organization.slug}/app/calendar`, icon: <Calendar size={20} /> },
+    { label: 'Global Dashboard', path: '/super-admin/dashboard', icon: <LayoutDashboard size={20} /> },
+    { label: 'Organizations', path: '/super-admin/organizations', icon: <Building2 size={20} /> },
   ];
 
-  const currentTitle = navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Application';
+  const currentTitle = navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Super Admin';
 
   const toggleSidebar = () => {
     if (window.innerWidth <= 1024) {
@@ -65,13 +64,9 @@ export default function UserLayout() {
       ></div>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
+      <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileSidebarOpen ? 'mobile-open' : ''}`} style={{ backgroundColor: '#0f172a' }}>
         <div style={{ padding: 'var(--spacing-6)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {organization?.logo ? (
-            <img src={organization.logo} alt={organization.name} style={{ height: '32px', objectFit: 'contain' }} />
-          ) : (
-            <h2 className="sidebar-header-text" style={{ color: 'var(--color-text-inverse)', fontSize: '1.25rem', whiteSpace: 'nowrap', overflow: 'hidden' }}>{organization.name}</h2>
-          )}
+          <h2 className="sidebar-header-text" style={{ color: '#38bdf8', fontSize: '1.25rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden' }}>RBS Global</h2>
           {/* Mobile close button inside sidebar */}
           <button className="md:hidden" onClick={() => setIsMobileSidebarOpen(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', display: window.innerWidth <= 1024 ? 'block' : 'none' }}>
             <X size={20} />
@@ -80,15 +75,15 @@ export default function UserLayout() {
         
         <nav style={{ flex: 1, padding: 'var(--spacing-4) 0', overflowY: 'auto' }} className="hide-scrollbar">
           {navItems.map(item => {
-            const isActive = location.pathname.startsWith(item.path);
+            const isActive = location.pathname.startsWith(item.path) || (item.path === '/super-admin/organizations' && location.pathname === '/super-admin');
             const linkStyle = {
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--spacing-3)',
               padding: 'var(--spacing-3) var(--spacing-6)',
-              color: isActive ? 'var(--color-secondary-bg)' : 'rgba(255,255,255,0.7)',
-              backgroundColor: isActive ? 'rgba(0,0,0,0.2)' : 'transparent',
-              borderLeft: `4px solid ${isActive ? 'var(--color-secondary-bg)' : 'transparent'}`,
+              color: isActive ? '#38bdf8' : 'rgba(255,255,255,0.7)',
+              backgroundColor: isActive ? 'rgba(56,189,248,0.1)' : 'transparent',
+              borderLeft: `4px solid ${isActive ? '#38bdf8' : 'transparent'}`,
               textDecoration: 'none',
               fontWeight: isActive ? '500' : '400',
               transition: 'all 0.2s',
@@ -106,17 +101,17 @@ export default function UserLayout() {
 
         <div style={{ padding: 'var(--spacing-4)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="flex items-center gap-3 mb-4 sidebar-user-info" style={{ whiteSpace: 'nowrap' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <UserIcon size={20} color="white" />
+            <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: 'rgba(56,189,248,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <UserIcon size={20} color="#38bdf8" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', textOverflow: 'ellipsis', overflow: 'hidden' }}>{user?.name}</p>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>User</p>
+              <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '500', color: '#f8fafc', textOverflow: 'ellipsis', overflow: 'hidden' }}>{user?.name}</p>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>Super Administrator</p>
             </div>
           </div>
           <button 
             onClick={logout}
-            className="sidebar-nav-item"
+            className="sidebar-nav-item hover:bg-slate-800 transition-colors"
             style={{ 
               width: '100%', 
               display: 'flex', 
@@ -124,9 +119,9 @@ export default function UserLayout() {
               justifyContent: 'center', 
               gap: 'var(--spacing-2)', 
               padding: 'var(--spacing-2)',
-              background: 'rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.05)',
               border: 'none',
-              color: 'white',
+              color: '#cbd5e1',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               whiteSpace: 'nowrap'
@@ -140,8 +135,8 @@ export default function UserLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="main-content">
-        <header className="topbar">
+      <main className="main-content bg-slate-50">
+        <header className="topbar border-b border-slate-200 bg-white">
           <button 
             onClick={toggleSidebar}
             style={{
@@ -164,7 +159,7 @@ export default function UserLayout() {
           </h2>
         </header>
         <div className="page-content">
-          <div className="container" style={{ maxWidth: '100%', padding: 0 }}>
+          <div className="container" style={{ maxWidth: '100%', padding: '24px' }}>
             <Outlet />
           </div>
         </div>

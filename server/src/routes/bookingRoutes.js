@@ -7,10 +7,11 @@ import {
   listResourceBookings
 } from '../controllers/bookingController.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
+import { requireTenant } from '../middleware/tenantMiddleware.js';
 
 const bookingRoutes = Router();
 
-bookingRoutes.use(requireAuth);
+bookingRoutes.use(requireAuth, requireTenant);
 bookingRoutes.get('/', listBookings);
 bookingRoutes.get('/resource/:id', listResourceBookings);
 bookingRoutes.post('/', createBookingHandler);

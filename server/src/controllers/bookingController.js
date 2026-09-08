@@ -42,7 +42,7 @@ function parseBookingInput(body) {
 
 export async function listBookings(request, response) {
   try {
-    const bookings = await findBookingsByUserId(request.user.id);
+    const bookings = await findBookingsByUserId(request.user.id, request.organizationId);
     return response.json({ success: true, bookings });
   } catch (_error) {
     return errorResponse(response, 500, 'Unable to retrieve bookings at this time.');
@@ -54,7 +54,7 @@ export async function getBooking(request, response) {
   if (!id) return errorResponse(response, 400, 'Booking ID must be a positive integer.');
 
   try {
-    const booking = await findBookingById(id);
+    const booking = await findBookingById(id, request.organizationId);
     if (!booking) return errorResponse(response, 404, 'Booking not found.');
     if (String(booking.user_id) !== String(request.user.id)) {
       return errorResponse(response, 403, 'You are not allowed to access this booking.');
@@ -70,11 +70,11 @@ export async function createBookingHandler(request, response) {
   if (parsed.error) return errorResponse(response, 400, parsed.error);
 
   try {
-    const resource = await findActiveResourceById(parsed.value.resourceId);
+    const resource = await findActiveResourceById(parsed.value.resourceId, request.organizationId);
     if (!resource) return errorResponse(response, 404, 'Resource not found.');
     if (resource.status !== 'ACTIVE') return errorResponse(response, 409, 'Resource is inactive.');
 
-    const booking = await createBooking({ userId: request.user.id, ...parsed.value });
+    const booking = await createBooking({ userId: request.user.id, ...parsed.value, organizationId: request.organizationId });
     return response.status(201).json({ success: true, booking });
   } catch (error) {
     if (error?.code === '23P01') {
@@ -91,13 +91,13 @@ export async function cancelBookingHandler(request, response) {
   if (!id) return errorResponse(response, 400, 'Booking ID must be a positive integer.');
 
   try {
-    const booking = await findBookingById(id);
+    const booking = await findBookingById(id, request.organizationId);
     if (!booking) return errorResponse(response, 404, 'Booking not found.');
     if (String(booking.user_id) !== String(request.user.id)) {
       return errorResponse(response, 403, 'You are not allowed to cancel this booking.');
     }
 
-    const cancelled = await cancelBooking(id, request.user.id);
+    const cancelled = await cancelBooking(id, request.user.id, request.organizationId);
     if (!cancelled) return errorResponse(response, 409, 'This booking cannot be cancelled in its current status.');
     return response.json({ success: true, booking: cancelled });
   } catch (_error) {
@@ -113,7 +113,7 @@ export async function listAdminBookings(request, response) {
   }
 
   try {
-    const bookings = await findAllBookings(status);
+    const bookings = await findAllBookings(status, request.organizationId);
     return response.json({ success: true, bookings });
   } catch (_error) {
     return errorResponse(response, 500, 'Unable to retrieve bookings at this time.');
@@ -126,13 +126,13 @@ export async function changeBookingStatus(request, response) {
 
   const status = request.params.action === 'approve' ? 'APPROVED' : 'REJECTED';
   try {
-    const existing = await findBookingById(id);
+    const existing = await findBookingById(id, request.organizationId);
     if (!existing) return errorResponse(response, 404, 'Booking not found.');
     if (existing.status !== 'PENDING') {
       return errorResponse(response, 409, 'Only pending bookings can be approved or rejected.');
     }
 
-    const booking = await updateBookingStatus(id, status);
+    const booking = await updateBookingStatus(id, status, request.organizationId);
     if (!booking) return errorResponse(response, 409, 'Booking status changed before this request completed.');
     return response.json({ success: true, booking });
   } catch (error) {
@@ -148,7 +148,7 @@ export async function listResourceBookings(request, response) {
   if (!resourceId) return errorResponse(response, 400, 'Resource ID must be a positive integer.');
 
   try {
-    const bookings = await findBookingsByResourceId(resourceId);
+    const bookings = await findBookingsByResourceId(resourceId, request.organizationId);
     return response.json({ success: true, bookings });
   } catch (_error) {
     return errorResponse(response, 500, 'Unable to retrieve resource bookings at this time.');

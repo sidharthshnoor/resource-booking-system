@@ -68,6 +68,7 @@ export async function register(request, response) {
 export async function login(request, response) {
   const email = typeof request.body?.email === 'string' ? request.body.email.trim() : '';
   const password = typeof request.body?.password === 'string' ? request.body.password : '';
+  const organizationSlug = typeof request.body?.organizationSlug === 'string' ? request.body.organizationSlug.trim() : null;
 
   if (!email || !password) {
     return buildError(response, 400, 'Email and password are required.');
@@ -79,7 +80,7 @@ export async function login(request, response) {
 
   try {
     const result = await pool.query(
-      'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+      'SELECT u.*, o.slug as org_slug, o.status as org_status FROM users u JOIN organizations o ON o.id = u.organization_id WHERE LOWER(u.email) = LOWER($1)',
       [email]
     );
 
@@ -92,6 +93,14 @@ export async function login(request, response) {
     if (user.status === 'DEACTIVATED') {
       return buildError(response, 403, "User doesn't exist. Please contact the organization.");
     }
+    
+    if (user.org_status === 'DEACTIVATED') {
+      return buildError(response, 403, "Organization is currently unavailable.");
+    }
+
+    if (organizationSlug && user.org_slug !== organizationSlug) {
+       return buildError(response, 401, 'Invalid email or password for this organization.');
+    }
 
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
@@ -102,17 +111,25 @@ export async function login(request, response) {
     await updateLastLogin(user.id);
 
     const token = jwt.sign(
-      { sub: user.id, role: user.role },
+      { sub: user.id, role: user.role, organization_id: user.organization_id },
       env.jwtSecret,
       { expiresIn: '1h' }
     );
 
+    const organizationSlugToReturn = user.org_slug;
+
+    // Remove raw fields we added for checks
+    delete user.org_slug;
+    delete user.org_status;
+
     return response.json({
       success: true,
       token,
-      user: sanitizeUser(user)
+      user: sanitizeUser(user),
+      organizationSlug: organizationSlugToReturn
     });
   } catch (error) {
+    console.error('Login Error:', error);
     return buildError(response, 500, 'Unable to log in at this time.');
   }
 }
@@ -146,11 +163,16 @@ export async function inviteUser(request, response) {
     const tokenHash = hashToken(rawToken);
     
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const orgId = request.organizationId || request.user?.organization_id;
+
+    if (!orgId) {
+      return buildError(response, 403, 'Organization context missing.');
+    }
 
     await pool.query(
-      `INSERT INTO auth_tokens (type, email, token_hash, expires_at)
-       VALUES ('INVITATION', $1, $2, $3)`,
-      [email, tokenHash, expiresAt]
+      `INSERT INTO auth_tokens (type, email, token_hash, expires_at, organization_id)
+       VALUES ('INVITATION', $1, $2, $3, $4)`,
+      [email, tokenHash, expiresAt, orgId]
     );
 
     await sendInvitationEmail(email, rawToken);
@@ -176,7 +198,7 @@ export async function createAccount(request, response) {
   try {
     const tokenHash = hashToken(token);
     const tokenResult = await pool.query(
-      `SELECT id, email, expires_at, used_at FROM auth_tokens 
+      `SELECT id, email, expires_at, used_at, organization_id FROM auth_tokens 
        WHERE token_hash = $1 AND type = 'INVITATION'`,
       [tokenHash]
     );
@@ -206,8 +228,8 @@ export async function createAccount(request, response) {
     await pool.query('BEGIN');
     
     await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)',
-      [name, invite.email, passwordHash]
+      'INSERT INTO users (name, email, password_hash, organization_id) VALUES ($1, $2, $3, $4)',
+      [name, invite.email, passwordHash, invite.organization_id]
     );
 
     await pool.query(
@@ -233,7 +255,7 @@ export async function forgotPassword(request, response) {
   }
 
   try {
-    const userResult = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 AND status != \'DEACTIVATED\'', [email]);
+    const userResult = await pool.query('SELECT id, organization_id FROM users WHERE LOWER(email) = $1 AND status != \'DEACTIVATED\'', [email]);
     
     if (userResult.rows.length > 0) {
       const user = userResult.rows[0];
@@ -265,9 +287,9 @@ export async function forgotPassword(request, response) {
       );
 
       await pool.query(
-        `INSERT INTO auth_tokens (type, email, user_id, token_hash, expires_at)
-         VALUES ('PASSWORD_RESET', $1, $2, $3, $4)`,
-        [email, user.id, tokenHash, expiresAt]
+        `INSERT INTO auth_tokens (type, email, user_id, token_hash, expires_at, organization_id)
+         VALUES ('PASSWORD_RESET', $1, $2, $3, $4, $5)`,
+        [email, user.id, tokenHash, expiresAt, user.organization_id]
       );
 
       // Send email but don't crash if it fails, just log it securely

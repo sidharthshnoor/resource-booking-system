@@ -1,13 +1,15 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useOrganization } from '../context/OrganizationContext';
 import Card from '../components/ui/Card';
 
 export default function AuthLayout() {
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { organization } = useOrganization();
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
-  const isRegisterPage = location.pathname === '/register';
+  const isLoginPage = location.pathname.endsWith('/login');
+  const isRegisterPage = location.pathname.endsWith('/register');
 
   if (loading) {
     return (
@@ -20,9 +22,9 @@ export default function AuthLayout() {
   // If already authenticated, redirect to appropriate dashboard
   if (isAuthenticated) {
     if (isAdmin) {
-      return <Navigate to="/admin/dashboard" replace />;
+      return <Navigate to={`/org/${organization.slug}/admin/dashboard`} replace />;
     }
-    return <Navigate to="/app/dashboard" replace />;
+    return <Navigate to={`/org/${organization.slug}/app/dashboard`} replace />;
   }
 
   if (isLoginPage || isRegisterPage) {
@@ -38,9 +40,11 @@ export default function AuthLayout() {
 
           <aside className="auth-visual-panel" aria-label="Brand panel">
             <div className="auth-visual-panel-inner">
-              <h1 className="auth-brand-title">
-                RBS <span>Enterprise</span>
-              </h1>
+              {organization?.logo ? (
+                <img src={organization.logo} alt={organization.name} className="h-16 mb-6 object-contain" />
+              ) : (
+                <h1 className="auth-brand-title">{organization.name}</h1>
+              )}
               <p className="auth-brand-subtitle">Resource Booking System</p>
 
               <div className="auth-brand-divider" aria-hidden="true" />
@@ -63,7 +67,11 @@ export default function AuthLayout() {
       <div style={{ width: '100%', maxWidth: '440px' }}>
         <Card>
           <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
-            <h2 style={{ color: 'var(--color-primary)' }}>RBS Enterprise</h2>
+            {organization?.logo ? (
+              <img src={organization.logo} alt={organization.name} className="h-12 mx-auto mb-2 object-contain" />
+            ) : (
+              <h2 style={{ color: 'var(--color-primary)' }}>{organization.name}</h2>
+            )}
             <p style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-2)' }}>Resource Booking System</p>
           </div>
           <Outlet />

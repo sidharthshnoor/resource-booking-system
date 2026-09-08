@@ -8,7 +8,7 @@ export async function listUsers(request, response) {
   const role = roleValue && roleValue !== 'ALL' ? roleValue : null;
   if (role && !validRoles.has(role)) return response.status(400).json({ success: false, message: 'Role must be USER, ADMIN, or ALL.' });
   try {
-    return response.json({ success: true, users: await findUsers({ search, role }) });
+    return response.json({ success: true, users: await findUsers({ search, role, organizationId: request.organizationId }) });
   } catch (_error) {
     return response.status(500).json({ success: false, message: 'Unable to retrieve users at this time.' });
   }
@@ -22,7 +22,7 @@ export async function updateUserStatus(request, response) {
   }
   
   try {
-    const updatedUser = await updateStatusInDb(id, status);
+    const updatedUser = await updateStatusInDb(id, status, request.organizationId);
     if (!updatedUser) {
       return response.status(404).json({ success: false, message: 'User not found.' });
     }
@@ -41,7 +41,7 @@ export async function deleteUser(request, response) {
   }
 
   try {
-    const userToDel = await getUserById(id);
+    const userToDel = await getUserById(id, request.organizationId);
     if (!userToDel) {
       return response.status(404).json({ success: false, message: 'User not found.' });
     }
@@ -50,7 +50,7 @@ export async function deleteUser(request, response) {
       return response.status(403).json({ success: false, message: 'Admin users cannot be deleted.' });
     }
 
-    await deleteUserById(id, userToDel.email);
+    await deleteUserById(id, userToDel.email, request.organizationId);
     return response.json({ success: true, message: 'User deleted successfully.' });
   } catch (error) {
     console.error('Delete user error:', error);

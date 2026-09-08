@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganization } from '../../context/OrganizationContext';
 import Button from '../../components/ui/Button';
 
 export default function Login() {
   const { login } = useAuth();
+  const { organization } = useOrganization();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -29,11 +31,12 @@ export default function Login() {
     setError('');
 
     try {
-      const user = await login(formData);
+      const payload = { ...formData, organizationSlug: organization.slug };
+      const user = await login(payload);
       if (user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
+        navigate(`/org/${organization.slug}/admin/dashboard`);
       } else {
-        navigate('/app/dashboard');
+        navigate(`/org/${organization.slug}/app/dashboard`);
       }
     } catch (err) {
       setError(err.message || 'Failed to login');
@@ -45,6 +48,11 @@ export default function Login() {
   return (
     <div className="login-form-wrap">
       <div className="login-header-block">
+        {organization?.logo ? (
+          <img src={organization.logo} alt={organization.name} className="mx-auto h-12 mb-4 object-contain" />
+        ) : (
+          <h2 className="text-xl font-bold text-primary-700 mb-2">{organization?.name || 'Resource Booking'}</h2>
+        )}
         <h2 className="login-title">Welcome Back</h2>
         <p className="login-subtitle">Sign in to your account to continue</p>
       </div>
@@ -109,7 +117,7 @@ export default function Login() {
             <input type="checkbox" className="custom-checkbox" style={{ width: '16px', height: '16px', accentColor: '#006a61' }} />
             Remember me
           </label>
-          <Link to="/forgot-password" className="forgot-password-link" style={{ fontSize: '0.85rem', color: '#006a61', textDecoration: 'none' }}>Forgot password?</Link>
+          <Link to={`/org/${organization.slug}/forgot-password`} className="forgot-password-link" style={{ fontSize: '0.85rem', color: '#006a61', textDecoration: 'none' }}>Forgot password?</Link>
         </div>
 
         <div className="login-form-actions">
@@ -125,14 +133,14 @@ export default function Login() {
       <button
         type="button"
         className="login-secondary-button"
-        onClick={() => navigate('/register')}
+        onClick={() => navigate(`/org/${organization.slug}/register`)}
       >
         <UserPlus size={18} />
         <span>Create an account</span>
       </button>
 
       <div className="login-account-link">
-        Don&apos;t have an account? <Link to="/register">Register here</Link>
+        Don&apos;t have an account? <Link to={`/org/${organization.slug}/register`}>Register here</Link>
       </div>
     </div>
   );

@@ -53,7 +53,7 @@ export async function listResources(request, response) {
   }
 
   try {
-    const resources = await findResources({ search, type, location, status: status === 'ALL' ? null : status });
+    const resources = await findResources({ search, type, location, status: status === 'ALL' ? null : status, organizationId: request.organizationId });
     return response.json({ success: true, resources });
   } catch (_error) {
     return errorResponse(response, 500, 'Unable to retrieve resources at this time.');
@@ -65,7 +65,7 @@ export async function getResource(request, response) {
   if (!id) return errorResponse(response, 400, 'Resource ID must be a positive integer.');
 
   try {
-    const resource = await findResourceById(id);
+    const resource = await findResourceById(id, request.organizationId);
     if (!resource) return errorResponse(response, 404, 'Resource not found.');
     return response.json({ success: true, resource });
   } catch (_error) {
@@ -78,7 +78,7 @@ export async function createResourceHandler(request, response) {
   if (parsed.error) return errorResponse(response, 400, parsed.error);
 
   try {
-    const resource = await createResource(parsed.value);
+    const resource = await createResource({ ...parsed.value, organizationId: request.organizationId });
     return response.status(201).json({ success: true, resource });
   } catch (_error) {
     return errorResponse(response, 400, 'Unable to create resource. Check the submitted values.');
@@ -93,7 +93,7 @@ export async function updateResourceHandler(request, response) {
   if (parsed.error) return errorResponse(response, 400, parsed.error);
 
   try {
-    const resource = await updateResource(id, parsed.value);
+    const resource = await updateResource(id, { ...parsed.value, organizationId: request.organizationId });
     if (!resource) return errorResponse(response, 404, 'Resource not found.');
     return response.json({ success: true, resource });
   } catch (_error) {
@@ -106,7 +106,7 @@ export async function deleteResourceHandler(request, response) {
   if (!id) return errorResponse(response, 400, 'Resource ID must be a positive integer.');
 
   try {
-    const deleted = await deleteResource(id);
+    const deleted = await deleteResource(id, request.organizationId);
     if (!deleted) return errorResponse(response, 404, 'Resource not found.');
     return response.json({ success: true, message: 'Resource deleted successfully.' });
   } catch (error) {

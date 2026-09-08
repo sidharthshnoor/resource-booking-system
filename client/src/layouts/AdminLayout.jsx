@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useOrganization } from '../context/OrganizationContext';
 import {
   Activity,
   BarChart3,
@@ -18,6 +19,7 @@ import {
 
 export default function AdminLayout() {
   const { isAuthenticated, isAdmin, user, logout, loading } = useAuth();
+  const { organization } = useOrganization();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -32,35 +34,46 @@ export default function AdminLayout() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={`/org/${organization.slug}/login`} replace />;
+  }
+
+  if (user.organization_id !== organization.id) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center border border-gray-100">
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
+          <p className="text-gray-600 mb-6">You are not authorized to view this organization's data.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAdmin) {
-    return <Navigate to="/app/dashboard" replace />;
+    return <Navigate to={`/org/${organization.slug}/app/dashboard`} replace />;
   }
 
   const navGroups = [
     {
       label: 'Main',
       items: [
-        { label: 'Admin Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
-        { label: 'Resource Management', path: '/admin/resources', icon: <Warehouse size={18} /> },
-        { label: 'Booking Management', path: '/admin/bookings', icon: <ClipboardList size={18} /> },
-        { label: 'Admin Calendar', path: '/admin/calendar', icon: <Calendar size={18} /> },
+        { label: 'Admin Dashboard', path: `/org/${organization.slug}/admin/dashboard`, icon: <LayoutDashboard size={18} /> },
+        { label: 'Resource Management', path: `/org/${organization.slug}/admin/resources`, icon: <Warehouse size={18} /> },
+        { label: 'Booking Management', path: `/org/${organization.slug}/admin/bookings`, icon: <ClipboardList size={18} /> },
+        { label: 'Admin Calendar', path: `/org/${organization.slug}/admin/calendar`, icon: <Calendar size={18} /> },
       ]
     },
     {
       label: 'Management',
       items: [
-        { label: 'User Management', path: '/admin/users', icon: <Users size={18} /> },
-        { label: 'Reports & Analytics', path: '/admin/reports', icon: <BarChart3 size={18} /> },
-        { label: 'Activity Logs', path: '/admin/activity', icon: <Activity size={18} /> },
+        { label: 'User Management', path: `/org/${organization.slug}/admin/users`, icon: <Users size={18} /> },
+        { label: 'Reports & Analytics', path: `/org/${organization.slug}/admin/reports`, icon: <BarChart3 size={18} /> },
+        { label: 'Activity Logs', path: `/org/${organization.slug}/admin/activity`, icon: <Activity size={18} /> },
       ]
     },
     {
       label: 'System',
       items: [
-        { label: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> },
+        { label: 'Settings', path: `/org/${organization.slug}/admin/settings`, icon: <Settings size={18} /> },
       ]
     }
   ];
@@ -87,7 +100,11 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
         <div style={{ padding: 'var(--spacing-6)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 className="sidebar-header-text" style={{ color: 'var(--color-text-inverse)', fontSize: '1.25rem', whiteSpace: 'nowrap', overflow: 'hidden' }}>RBS Admin</h2>
+          {organization?.logo ? (
+            <img src={organization.logo} alt={organization.name} style={{ height: '32px', objectFit: 'contain' }} />
+          ) : (
+            <h2 className="sidebar-header-text" style={{ color: 'var(--color-text-inverse)', fontSize: '1.25rem', whiteSpace: 'nowrap', overflow: 'hidden' }}>{organization.name} Admin</h2>
+          )}
           {/* Mobile close button inside sidebar */}
           <button className="md:hidden" onClick={() => setIsMobileSidebarOpen(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', display: window.innerWidth <= 1024 ? 'block' : 'none' }}>
             <X size={20} />
