@@ -6,6 +6,19 @@ import './Landing.css';
 export default function Landing() {
   const [activeStep, setActiveStep] = useState('discover');
 
+  useEffect(() => {
+    // Scroll to top immediately to prevent part-way down rendering
+    const container = document.querySelector('.landing-page');
+    if (container) {
+      if (window.location.hash) {
+        const el = document.querySelector(window.location.hash);
+        if (el) el.scrollIntoView();
+      } else {
+        container.scrollTo(0, 0);
+      }
+    }
+  }, []);
+
   // Simple intersection observer for reveal animations
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -76,6 +89,10 @@ export default function Landing() {
                 <span>Trusted by organizations</span>
               </div>
               <div className="trust-item">
+                <CheckCircle2 className="trust-icon" size={16} />
+                <span>99.9% uptime</span>
+              </div>
+              <div className="trust-item">
                 <Shield className="trust-icon" size={16} />
                 <span>Secure & reliable</span>
               </div>
@@ -94,7 +111,7 @@ export default function Landing() {
               <div className="status-card card-1">
                 <div className="sc-icon bg-teal-light"><LayoutDashboard size={16} /></div>
                 <div className="sc-info">
-                  <strong>Meeting Room A</strong>
+                  <strong>Boardroom Alpha</strong>
                   <span className="sc-status text-teal"><span className="status-dot bg-teal"></span>Available</span>
                   <span className="sc-time">09:00 AM – 10:00 AM</span>
                 </div>
@@ -104,7 +121,7 @@ export default function Landing() {
               <div className="status-card card-2">
                 <div className="sc-icon bg-orange-light"><Users size={16} /></div>
                 <div className="sc-info">
-                  <strong>Conference Room B</strong>
+                  <strong>Design Studio</strong>
                   <span className="sc-status text-orange"><span className="status-dot bg-orange"></span>Booked</span>
                   <span className="sc-time">11:00 AM – 12:00 PM</span>
                 </div>
@@ -114,7 +131,7 @@ export default function Landing() {
               <div className="status-card card-3">
                 <div className="sc-icon bg-teal-light"><CheckCircle2 size={16} /></div>
                 <div className="sc-info">
-                  <strong>Training Room</strong>
+                  <strong>Conference Hall</strong>
                   <span className="sc-status text-teal"><span className="status-dot bg-teal"></span>Available</span>
                   <span className="sc-time">01:00 PM – 02:00 PM</span>
                 </div>
@@ -124,13 +141,11 @@ export default function Landing() {
               <div className="status-card card-4">
                 <div className="sc-icon bg-teal-light"><Settings size={16} /></div>
                 <div className="sc-info">
-                  <strong>Projector</strong>
+                  <strong>Video Equipment</strong>
                   <span className="sc-status text-teal"><span className="status-dot bg-teal"></span>Available</span>
                   <span className="sc-time">02:00 PM – 03:00 PM</span>
                 </div>
-              </div>
-
-            </div>
+              </div>            </div>
           </div>
         </div>
       </section>

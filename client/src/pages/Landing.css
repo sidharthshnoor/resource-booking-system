@@ -218,16 +218,24 @@ html {
 
 /* 2. HERO */
 .landing-hero {
+  /* At the 1366px reference width this places the image 50px below the
+     70px navbar once the two columns are vertically balanced. */
   padding: 40px 0;
   background-color: var(--c-white);
   display: flex;
   align-items: center;
+  min-height: calc(100vh - 70px);
+}
+
+.landing-header .landing-container,
+.landing-hero .landing-container {
+  max-width: 1246px;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1fr 1.25fr;
-  gap: 32px;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
   align-items: center;
   width: 100%;
 }
@@ -286,11 +294,10 @@ html {
 
 .hero-visual {
   position: relative;
-  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding-right: 20px;
+  justify-content: flex-start;
+  min-width: 0;
 }
 
 .hero-image-wrapper {
@@ -300,8 +307,10 @@ html {
 }
 
 .hero-image {
+  display: block;
   width: 100%;
-  height: 440px;
+  aspect-ratio: 15 / 11;
+  height: auto;
   object-fit: cover;
   object-position: center;
   border-radius: 20px;
@@ -324,16 +333,11 @@ html {
   backdrop-filter: blur(8px);
 }
 
-.card-1 { bottom: 20px; right: -20px; animation: float 6s ease-in-out infinite; }
-.card-2 { top: 40px; left: -40px; animation: float 7s ease-in-out infinite reverse; }
-.card-3 { bottom: 210px; right: -20px; animation: float 5s ease-in-out infinite 1s; }
-.card-4 { bottom: 80px; left: -20px; animation: float 6.5s ease-in-out infinite 0.5s; }
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
-}
+/* These are anchored to the image wrapper, never the page or hero section. */
+.card-1 { top: 8%; left: -8%; }
+.card-2 { top: 42%; right: -8%; }
+.card-3 { bottom: 8%; left: -5%; }
+.card-4 { bottom: 2%; right: -5%; }
 
 .sc-icon {
   padding: 10px;
@@ -1672,6 +1676,31 @@ html {
     grid-template-columns: 1fr;
     gap: 40px;
   }
+
+  /* Keep the hero side-by-side on roomy tablets; the remaining sections
+     continue to use their existing single-column layout. */
+  .landing-hero .hero-grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 36px;
+  }
+
+  .landing-hero .landing-container,
+  .landing-header .landing-container {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .status-card {
+    min-width: 196px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .sc-icon { padding: 8px; }
+  .card-2 { left: -24px; }
+  .card-3 { right: -20px; top: 42%; }
+  .card-4 { left: -12px; bottom: 14%; }
+  .card-1 { right: -12px; bottom: 4%; }
   
   .resources-visual {
     order: 0;
@@ -1743,6 +1772,53 @@ html {
   .footer-links {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 900px) {
+  .landing-hero {
+    padding: 42px 0 48px;
+  }
+
+  .landing-hero .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .hero-content { max-width: 600px; }
+
+  .hero-visual { justify-content: center; }
+
+  .hero-image-wrapper {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 600px;
+  }
+
+  .hero-image { grid-column: 1 / -1; }
+
+  .status-card {
+    position: static;
+    min-width: 0;
+    width: 100%;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .landing-container,
+  .landing-hero .landing-container,
+  .landing-header .landing-container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .landing-auth-links { gap: 8px; }
+  .landing-auth-links .btn { padding-left: 14px; padding-right: 14px; }
+  .hero-actions { align-items: stretch; flex-direction: column; gap: 12px; }
+  .hero-trust { gap: 14px; }
+  .hero-image-wrapper { grid-template-columns: 1fr; }
+  .hero-image { grid-column: auto; }
 }
 /* ========================================= */
 /* SHOWCASE UTILITY CLASSES (Generated)      */
@@ -2153,3 +2229,115 @@ html {
 .showcase-dashboard .showcase-view:nth-child(3) .col-span-3 { padding: 11px; }
 .showcase-dashboard .showcase-view:nth-child(3) .col-span-2 { gap: 10px; }
 .showcase-dashboard .showcase-view:nth-child(3) .col-span-2 > div { padding: 11px; }
+
+
+/* =========================================================
+   LANDING HERO REFERENCE LAYOUT FIX
+   Keeps the existing design/content and fixes only the
+   desktop hero alignment, sizing and scroll container.
+   ========================================================= */
+
+/* Let the document, rather than a nested 100vh container,
+   own the vertical scroll. This prevents odd scroll/anchor
+   positioning on the landing page. */
+.landing-page {
+  height: auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* Desktop reference layout (matches the supplied 1366px target). */
+@media (min-width: 901px) {
+  .landing-hero {
+    padding: 50px 0 56px;
+    min-height: calc(100vh - 70px);
+    display: block;
+  }
+
+  .landing-hero .hero-grid {
+    grid-template-columns: minmax(0, 496px) minmax(0, 600px);
+    column-gap: 34px;
+    align-items: start;
+    justify-content: start;
+  }
+
+  .landing-hero .hero-content {
+    align-self: start;
+    padding-top: 0;
+  }
+
+  .landing-hero .hero-visual {
+    align-self: start;
+    justify-content: flex-start;
+  }
+
+  .landing-hero .hero-image-wrapper {
+    width: 600px;
+    max-width: 600px;
+    position: relative;
+    flex: 0 0 600px;
+  }
+
+  .landing-hero .hero-image {
+    display: block;
+    width: 600px;
+    max-width: 100%;
+    aspect-ratio: 15 / 11;
+    height: auto;
+  }
+
+  /* Keep all four cards positioned relative to the image.
+     They never affect the hero's normal document flow. */
+  .landing-hero .status-card {
+    position: absolute;
+  }
+
+  .landing-hero .card-1 {
+    top: 8%;
+    left: -8%;
+  }
+
+  .landing-hero .card-2 {
+    top: 42%;
+    right: -8%;
+  }
+
+  .landing-hero .card-3 {
+    bottom: 8%;
+    left: -5%;
+  }
+
+  .landing-hero .card-4 {
+    bottom: 2%;
+    right: -5%;
+  }
+}
+
+/* =========================================================
+   MOBILE/TABLET — preserve stacked responsive behavior
+   ========================================================= */
+@media (max-width: 900px) {
+  .landing-page {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .landing-hero {
+    min-height: auto;
+  }
+
+  .landing-hero .hero-image-wrapper {
+    width: 100%;
+    max-width: 600px;
+  }
+}
+
+/* Avoid the reveal animation changing the perceived hero
+   position while the page is loading. It only fades/slides
+   visually and never changes layout dimensions. */
+.landing-hero .reveal-on-scroll {
+  will-change: opacity, transform;
+}

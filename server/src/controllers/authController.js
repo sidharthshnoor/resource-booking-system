@@ -330,7 +330,7 @@ export async function resetPassword(request, response) {
   try {
     const tokenHash = hashToken(token);
     const tokenResult = await pool.query(
-      `SELECT id, user_id, expires_at, used_at FROM auth_tokens 
+      `SELECT id, user_id, organization_id, expires_at, used_at FROM auth_tokens 
        WHERE token_hash = $1 AND type = 'PASSWORD_RESET'`,
       [tokenHash]
     );
@@ -354,8 +354,9 @@ export async function resetPassword(request, response) {
     await pool.query('BEGIN');
     
     await pool.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [passwordHash, resetToken.user_id]
+      `UPDATE users SET password_hash = $1, updated_at = NOW()
+       WHERE id = $2 AND organization_id = $3`,
+      [passwordHash, resetToken.user_id, resetToken.organization_id]
     );
 
     await pool.query(

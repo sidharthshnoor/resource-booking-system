@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Building2, LogOut, User as UserIcon, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Building2, LogOut, User as UserIcon, Menu, X, LayoutDashboard, Search, Bell, ChevronDown } from 'lucide-react';
 
 export default function SuperAdminLayout() {
   const { isAuthenticated, user, logout, loading } = useAuth();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
 
   // Close mobile sidebar when route changes
   useEffect(() => {
@@ -154,9 +155,20 @@ export default function SuperAdminLayout() {
           >
             <Menu size={20} />
           </button>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {currentTitle}
-          </h2>
+          <div className="super-admin-search">
+            <Search size={16} />
+            <input
+              value={globalSearch}
+              onChange={(event) => {
+                setGlobalSearch(event.target.value);
+                window.dispatchEvent(new CustomEvent('super-admin-search', { detail: event.target.value }));
+              }}
+              placeholder={location.pathname.includes('/dashboard') ? 'Search organizations, users, or anything...' : 'Search organizations, slug, or keyword...'}
+              aria-label="Search organizations"
+            />
+          </div>
+          <div className="super-admin-header-actions">
+          </div>
         </header>
         <div className="page-content">
           <div className="container" style={{ maxWidth: '100%', padding: '24px' }}>

@@ -1,270 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, Building2, CalendarDays, CheckCircle2, Edit3, Eye, Monitor, Plus, Shield, Trash2, Users, X, XCircle } from 'lucide-react';
 import superAdminService from '../../services/superAdmin.service';
-import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { ArrowLeft, UserPlus, AlertTriangle, ShieldCheck, Users, Shield, Monitor, Calendar } from 'lucide-react';
+
+const emptyOrgForm = { name: '', slug: '', logo: '' };
+const emptyAdminForm = { name: '', email: '', status: 'ACTIVE' };
+
+function StatusBadge({ status }) {
+  const active = status === 'ACTIVE';
+  return <span className={`details-status ${active ? 'is-active' : 'is-deactivated'}`}><span />{status}</span>;
+}
+
+function Metric({ icon: Icon, label, value, tone }) {
+  return <div className={`details-metric details-metric-${tone}`}><div><Icon size={21} /></div><section><p>{label}</p><strong>{value}</strong></section></div>;
+}
+
+function Modal({ title, children, onClose }) {
+  return <div className="details-modal-backdrop"><div className="details-modal"><div className="details-modal-header"><h2>{title}</h2><button onClick={onClose} aria-label="Close"><X size={18} /></button></div>{children}</div></div>;
+}
 
 export default function OrganizationDetails() {
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  const [adminForm, setAdminForm] = useState({ name: '', email: '' });
-  const [adminLoading, setAdminLoading] = useState(false);
-  const [adminError, setAdminError] = useState('');
-  const [adminSuccess, setAdminSuccess] = useState('');
+  const [notice, setNotice] = useState('');
+  const [modal, setModal] = useState(null);
+  const [orgForm, setOrgForm] = useState(emptyOrgForm);
+  const [adminForm, setAdminForm] = useState(emptyAdminForm);
+  const [adminTarget, setAdminTarget] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState('');
 
   const fetchDetails = async () => {
     try {
       setLoading(true);
-      const res = await superAdminService.getOrganization(id);
-      setData(res);
-    } catch (err) {
-      setError('Failed to load organization details.');
-    } finally {
-      setLoading(false);
-    }
+      const response = await superAdminService.getOrganization(id);
+      setData(response);
+      setError('');
+    } catch (err) { setError(err.message || 'Failed to load organization details.'); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchDetails();
-  }, [id]);
+  useEffect(() => { fetchDetails(); }, [id]);
+
+  const closeModal = () => { if (!saving) { setModal(null); setModalError(''); } };
+  const openOrgEdit = () => { setOrgForm({ name: data.organization.name, slug: data.organization.slug, logo: data.organization.logo || '' }); setModal('organization'); setModalError(''); };
+  const openAdminAdd = () => { setAdminTarget(null); setAdminForm(emptyAdminForm); setModal('admin'); setModalError(''); };
+  const openAdminEdit = (admin) => { setAdminTarget(admin); setAdminForm({ name: admin.name, email: admin.email, status: admin.status || 'ACTIVE' }); setModal('admin'); setModalError(''); };
 
   const toggleStatus = async () => {
-    if (data.organization.slug === 'default') {
-      alert("Cannot deactivate the default organization.");
-      return;
-    }
-    const newStatus = data.organization.status === 'ACTIVE' ? 'DEACTIVATED' : 'ACTIVE';
-    try {
-      await superAdminService.updateOrganizationStatus(id, newStatus);
-      fetchDetails(); // Refresh
-    } catch (err) {
-      alert(err.message || 'Failed to update status');
-    }
+    if (data.organization.slug === 'default') return alert('Cannot deactivate the default organization.');
+    try { await superAdminService.updateOrganizationStatus(id, data.organization.status === 'ACTIVE' ? 'DEACTIVATED' : 'ACTIVE'); setNotice('Organization status updated.'); fetchDetails(); }
+    catch (err) { setError(err.message || 'Failed to update status.'); }
   };
 
-  const handleAdminProvision = async (e) => {
-    e.preventDefault();
-    setAdminLoading(true);
-    setAdminError('');
-    setAdminSuccess('');
-
-    try {
-      const res = await superAdminService.provisionAdmin(id, adminForm);
-      setAdminSuccess(res.message);
-      setAdminForm({ name: '', email: '' });
-      fetchDetails(); // Refresh to hide form and show new admin
-    } catch (err) {
-      setAdminError(err.message || 'Failed to provision admin');
-    } finally {
-      setAdminLoading(false);
-    }
+  const saveOrganization = async (event) => {
+    event.preventDefault();
+    if (!orgForm.name.trim() || !orgForm.slug.trim()) return setModalError('Name and slug are required.');
+    if (!/^[a-z0-9-]+$/.test(orgForm.slug)) return setModalError('Slug can only contain lowercase letters, numbers, and hyphens.');
+    setSaving(true); setModalError('');
+    try { await superAdminService.updateOrganization(id, orgForm); setModal(null); setNotice('Organization details updated.'); fetchDetails(); }
+    catch (err) { setModalError(err.message || 'Unable to update organization.'); }
+    finally { setSaving(false); }
   };
 
-  if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading details...</div>;
-  }
+  const saveAdmin = async (event) => {
+    event.preventDefault();
+    if (!adminForm.name.trim() || !adminForm.email.trim()) return setModalError('Name and email are required.');
+    setSaving(true); setModalError('');
+    try {
+      const response = adminTarget ? await superAdminService.updateAdmin(id, adminTarget.id, adminForm) : await superAdminService.provisionAdmin(id, adminForm);
+      setModal(null); setAdminForm(emptyAdminForm); setNotice(response.message || 'Administrator saved.'); fetchDetails();
+    } catch (err) { setModalError(err.message || 'Unable to save administrator.'); }
+    finally { setSaving(false); }
+  };
 
-  if (error || !data) {
-    return (
-      <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center">
-        <AlertTriangle size={20} className="mr-2" />
-        {error || 'Organization not found'}
-      </div>
-    );
-  }
+  const removeAdmin = async (admin) => {
+    if (!window.confirm(`Remove administrator ${admin.name}? This action cannot be undone.`)) return;
+    try { await superAdminService.deleteAdmin(id, admin.id); setNotice('Administrator removed.'); fetchDetails(); }
+    catch (err) { setError(err.message || 'Unable to remove administrator.'); }
+  };
 
-  const { organization, admins } = data;
-  const hasAdmin = admins && admins.length > 0;
+  if (loading) return <div className="details-loading">Loading organization details...</div>;
+  if (error || !data) return <div className="details-error"><AlertTriangle size={20} /> {error || 'Organization not found.'}</div>;
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Link to="/super-admin/organizations" className="mr-4 text-slate-500 hover:text-slate-700 transition-colors">
-            <ArrowLeft size={24} />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">{organization.name}</h1>
-            <p className="text-slate-500 font-mono">/org/{organization.slug}</p>
-          </div>
-        </div>
-        <div>
-          <Button 
-            variant={organization.status === 'ACTIVE' ? 'danger' : 'primary'}
-            onClick={toggleStatus}
-            disabled={organization.slug === 'default'}
-          >
-            {organization.status === 'ACTIVE' ? 'Deactivate Organization' : 'Activate Organization'}
-          </Button>
-        </div>
-      </div>
+  const { organization, admins = [], counts = {} } = data;
+  return <div className="organization-details-page">
+    <div className="details-header"><div><Link to="/super-admin/organizations" className="details-back"><ArrowLeft size={16} /> Back to Organizations</Link><div className="details-title-row"><h1>{organization.name}</h1><StatusBadge status={organization.status} /></div><p className="details-slug">/org/{organization.slug}</p></div><div className="details-header-actions"><button className="details-secondary-button" onClick={openOrgEdit}><Edit3 size={15} /> Edit Details</button><button className={`details-status-button ${organization.status === 'ACTIVE' ? 'danger' : 'primary'}`} disabled={organization.slug === 'default'} onClick={toggleStatus}>{organization.status === 'ACTIVE' ? <XCircle size={15} /> : <CheckCircle2 size={15} />}{organization.status === 'ACTIVE' ? 'Deactivate Organization' : 'Activate Organization'}</button></div></div>
+    {notice && <div className="details-notice"><CheckCircle2 size={17} /> {notice}<button onClick={() => setNotice('')} aria-label="Dismiss"><X size={15} /></button></div>}
+    <section className="details-metrics"><Metric icon={Users} label="Total Users" value={counts.users || 0} tone="blue" /><Metric icon={Shield} label="Total Admins" value={counts.admins || 0} tone="violet" /><Metric icon={Monitor} label="Total Resources" value={counts.resources || 0} tone="green" /><Metric icon={CalendarDays} label="Total Bookings" value={counts.bookings || 0} tone="orange" /></section>
+    <section className="details-main-grid"><div className="details-card organization-info-card"><div className="details-card-heading"><div className="details-card-icon blue"><Building2 size={19} /></div><div><h2>Organization Information</h2><p>Basic information about this organization.</p></div><button className="details-inline-edit" onClick={openOrgEdit}><Edit3 size={14} /> Edit Details</button></div><div className="details-info-list"><div><strong>Organization Name</strong><span>{organization.name}</span></div><div><strong>Organization Slug</strong><span>{organization.slug}</span></div><div><strong>Status</strong><span><StatusBadge status={organization.status} /></span></div><div><strong>Created At</strong><span>{new Date(organization.created_at).toLocaleString()}</span></div>{organization.logo && <div><strong>Logo</strong><img className="details-logo" src={organization.logo} alt={`${organization.name} logo`} /></div>}</div></div><div className="details-card details-about-card"><div className="details-card-heading"><div className="details-card-icon blue"><Eye size={19} /></div><div><h2>About This Organization</h2><p>Tenant information and data ownership.</p></div></div><p>This organization has its own users, resources, and bookings. All data is isolated within this tenant.</p></div></section>
+    <section className="details-card administrators-card"><div className="details-card-heading"><div className="details-card-icon violet"><Shield size={19} /></div><div><h2>Administrators</h2><p>Users with administrator access to this organization.</p></div><button className="details-add-button" onClick={openAdminAdd}><Plus size={16} /> Add Administrator</button></div><div className="admin-table-scroll"><table className="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Added On</th><th>Actions</th></tr></thead><tbody>{admins.map((admin) => <tr key={admin.id}><td><div className="admin-name"><span>{admin.name.slice(0, 2).toUpperCase()}</span><strong>{admin.name}</strong></div></td><td>{admin.email}</td><td><span className="admin-role">{admin.role}</span></td><td><StatusBadge status={admin.status || 'ACTIVE'} /></td><td>{new Date(admin.created_at).toLocaleDateString()}</td><td><div className="admin-actions"><button onClick={() => openAdminEdit(admin)} title="Edit administrator"><Edit3 size={15} /></button><button className="remove" onClick={() => removeAdmin(admin)} title="Remove administrator"><Trash2 size={15} /></button></div></td></tr>)}{admins.length === 0 && <tr><td colSpan="6" className="admin-empty">No administrators found.</td></tr>}</tbody></table></div></section>
+    <footer className="details-footer"><span>© 2026 RBS Enterprise. All rights reserved.</span><span>Resource Booking System&nbsp; | &nbsp;Platform Administration</span></footer>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card className="flex items-center p-4">
-          <div className="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
-            <Users size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Users</p>
-            <p className="text-2xl font-bold text-slate-800">{data.counts?.users || 0}</p>
-          </div>
-        </Card>
-        
-        <Card className="flex items-center p-4">
-          <div className="w-12 h-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mr-4">
-            <Shield size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Admins</p>
-            <p className="text-2xl font-bold text-slate-800">{data.counts?.admins || 0}</p>
-          </div>
-        </Card>
-
-        <Card className="flex items-center p-4">
-          <div className="w-12 h-12 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-4">
-            <Monitor size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Resources</p>
-            <p className="text-2xl font-bold text-slate-800">{data.counts?.resources || 0}</p>
-          </div>
-        </Card>
-
-        <Card className="flex items-center p-4">
-          <div className="w-12 h-12 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-4">
-            <Calendar size={24} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Bookings</p>
-            <p className="text-2xl font-bold text-slate-800">{data.counts?.bookings || 0}</p>
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <Card className="h-full">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Profile</h3>
-            <div className="space-y-4">
-              {organization.logo && (
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Logo</p>
-                  <img src={organization.logo} alt="Logo" className="w-24 h-24 rounded object-contain border border-slate-200" />
-                </div>
-              )}
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Status</p>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  organization.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {organization.status}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Created</p>
-                <p className="text-slate-800">{new Date(organization.created_at).toLocaleString()}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <div className="flex items-center gap-2 mb-4">
-              <ShieldCheck size={20} className="text-slate-700" />
-              <h3 className="text-lg font-bold text-slate-800">Administrators</h3>
-            </div>
-            
-            {hasAdmin ? (
-              <div className="space-y-4">
-                {admins.map(admin => (
-                  <div key={admin.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
-                    <div>
-                      <p className="font-semibold text-slate-800">{admin.name}</p>
-                      <p className="text-sm text-slate-500">{admin.email}</p>
-                    </div>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Organization Admin
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-amber-50 text-amber-800 p-4 rounded-lg mb-6 border border-amber-200">
-                <div className="flex mb-2">
-                  <AlertTriangle size={20} className="mr-2 flex-shrink-0" />
-                  <p className="font-medium">No Administrators Found</p>
-                </div>
-                <p className="text-sm ml-7">This organization has no administrators. You should provision the first administrator so they can manage the tenant.</p>
-              </div>
-            )}
-          </Card>
-
-          {!hasAdmin && organization.status === 'ACTIVE' && (
-            <Card>
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Provision First Admin</h3>
-              <p className="text-sm text-slate-600 mb-6">
-                This will create an administrator account and send them a password setup email. They will be granted full access to this organization.
-              </p>
-
-              {adminError && (
-                <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm">
-                  {adminError}
-                </div>
-              )}
-              
-              {adminSuccess && (
-                <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-4 text-sm font-medium">
-                  {adminSuccess}
-                </div>
-              )}
-
-              <form onSubmit={handleAdminProvision} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="adminName" className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
-                    <input
-                      type="text"
-                      id="adminName"
-                      value={adminForm.name}
-                      onChange={e => setAdminForm({...adminForm, name: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded focus:ring-sky-500 focus:border-sky-500 outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="adminEmail" className="block text-sm font-medium text-slate-700 mb-1">Email Address *</label>
-                    <input
-                      type="email"
-                      id="adminEmail"
-                      value={adminForm.email}
-                      onChange={e => setAdminForm({...adminForm, email: e.target.value})}
-                      className="w-full px-3 py-2 border border-slate-300 rounded focus:ring-sky-500 focus:border-sky-500 outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <Button type="submit" isLoading={adminLoading}>
-                    <UserPlus size={18} className="mr-2" />
-                    Provision Admin
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          )}
-          
-          {!hasAdmin && organization.status !== 'ACTIVE' && (
-             <div className="p-4 text-center text-slate-500 border border-dashed border-slate-300 rounded-lg">
-                Activate the organization to provision administrators.
-             </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+    {modal === 'organization' && <Modal title="Edit Organization Details" onClose={closeModal}><form onSubmit={saveOrganization} className="details-form"><label>Organization Name<input value={orgForm.name} onChange={(event) => setOrgForm({ ...orgForm, name: event.target.value })} required /></label><label>URL Slug<div className="details-slug-input"><span>/org/</span><input value={orgForm.slug} onChange={(event) => setOrgForm({ ...orgForm, slug: event.target.value.toLowerCase() })} required /></div></label><label>Logo URL (Optional)<input type="url" value={orgForm.logo} onChange={(event) => setOrgForm({ ...orgForm, logo: event.target.value })} /></label>{modalError && <div className="details-modal-error">{modalError}</div>}<div className="details-modal-actions"><Button type="button" variant="secondary" onClick={closeModal}>Cancel</Button><Button type="submit" isLoading={saving}>Save Details</Button></div></form></Modal>}
+    {modal === 'admin' && <Modal title={adminTarget ? 'Edit Administrator' : 'Add Administrator'} onClose={closeModal}><form onSubmit={saveAdmin} className="details-form"><label>Admin Name<input value={adminForm.name} onChange={(event) => setAdminForm({ ...adminForm, name: event.target.value })} required /></label><label>Admin Email<input type="email" value={adminForm.email} onChange={(event) => setAdminForm({ ...adminForm, email: event.target.value })} required /></label>{adminTarget && <label>Status<select value={adminForm.status} onChange={(event) => setAdminForm({ ...adminForm, status: event.target.value })}><option value="ACTIVE">Active</option><option value="DEACTIVATED">Deactivated</option></select></label>}{!adminTarget && <p className="details-invite-note">A secure password setup invitation will be sent to this address.</p>}{modalError && <div className="details-modal-error">{modalError}</div>}<div className="details-modal-actions"><Button type="button" variant="secondary" onClick={closeModal}>Cancel</Button><Button type="submit" isLoading={saving}>{adminTarget ? 'Save Administrator' : 'Send Invitation'}</Button></div></form></Modal>}
+  </div>;
 }

@@ -17,8 +17,20 @@ const superAdminService = {
     return api.patch(`/super-admin/organizations/${id}/status`, { status });
   },
 
+  async updateOrganization(id, data) {
+    return api.patch(`/super-admin/organizations/${id}`, data);
+  },
+
   async provisionAdmin(id, data) {
     return api.post(`/super-admin/organizations/${id}/admins`, data);
+  },
+
+  async updateAdmin(organizationId, adminId, data) {
+    return api.patch(`/super-admin/organizations/${organizationId}/admins/${adminId}`, data);
+  },
+
+  async deleteAdmin(organizationId, adminId) {
+    return api.delete(`/super-admin/organizations/${organizationId}/admins/${adminId}`);
   },
 
   async deleteOrganization(id) {

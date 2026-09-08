@@ -79,21 +79,16 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="login-form-wrap" style={{ textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="reset-auth-page">
+        <div className="reset-auth-card reset-success-card">
+          <div className="reset-brand"><strong>RBS Platform</strong><span>Resource Booking System</span></div>
+          <div className="reset-success-icon">
             <CheckCircle2 size={32} />
           </div>
+          <h2 className="reset-title">Password Changed Successfully</h2>
+          <p className="reset-subtitle">{success}</p>
+          <Button onClick={() => navigate('/login')} fullWidth className="reset-submit-button">Go to Login</Button>
         </div>
-        
-        <h2 className="login-title" style={{ marginBottom: '0.5rem' }}>Password Changed Successfully</h2>
-        <p className="login-subtitle" style={{ marginBottom: '2rem' }}>
-          {success}
-        </p>
-        
-        <Button onClick={() => navigate('/login')} fullWidth className="login-submit-button">
-          Go to Login
-        </Button>
       </div>
     );
   }
@@ -101,111 +96,77 @@ export default function ResetPassword() {
   const isExpired = timeLeft === 0;
 
   return (
-    <div className="login-form-wrap">
-      <div className="login-header-block">
-        <h2 className="login-title">Reset Password</h2>
-        <p className="login-subtitle">Create a new password for your account.</p>
-      </div>
-
-      {!isExpired && (
-        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>Link expires in:</span>
-          <span style={{ fontSize: '1.25rem', color: '#0f172a', fontWeight: 700, fontFamily: 'monospace' }}>
-            {formatTime(timeLeft)}
-          </span>
+    <div className="reset-auth-page">
+      <div className="reset-auth-card">
+        <div className="reset-brand"><strong>RBS Platform</strong><span>Resource Booking System</span></div>
+        <div className="reset-header">
+          <h1 className="reset-title">Reset Password</h1>
+          <p className="reset-subtitle">Create a new password for your account.</p>
         </div>
-      )}
 
-      {isExpired ? (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '1.5rem', borderRadius: '0.5rem', textAlign: 'center', marginBottom: '2rem' }}>
-          <h3 style={{ color: '#b91c1c', fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>Reset link expired.</h3>
-          <p style={{ color: '#991b1b', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-            This password reset link is no longer valid.
-          </p>
-          <Button onClick={() => navigate('/forgot-password')} fullWidth style={{ background: 'white', color: '#b91c1c', border: '1px solid #fca5a5' }}>
-            Request New Reset Link
-          </Button>
-        </div>
-      ) : (
-        <>
-          {error && (
-            <div className="login-error-banner" role="alert">
-              {error}
-            </div>
-          )}
+        {!isExpired && (
+          <div className="reset-countdown">
+            <span>Link expires in</span>
+            <strong>{formatTime(timeLeft)}</strong>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="login-form">
-            <div className="login-field-group">
-              <label htmlFor="password" className="login-label">New Password</label>
-              <div className="login-input-shell login-password-shell">
-                <span className="login-input-icon" aria-hidden="true">
-                  <Lock size={18} />
-                </span>
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="login-input"
-                  required
-                />
-                <button
-                  type="button"
-                  className="login-password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+        {isExpired ? (
+          <div className="reset-expired">
+            <h2>Reset link expired</h2>
+            <p>This password reset link is no longer valid.</p>
+            <Button onClick={() => navigate('/forgot-password')} fullWidth className="reset-secondary-button">
+              Request New Reset Link
+            </Button>
+          </div>
+        ) : (
+          <>
+            {error && <div className="reset-error" role="alert">{error}</div>}
+
+            <form onSubmit={handleSubmit} className="reset-form">
+              <div className="reset-field">
+                <label htmlFor="password">New Password</label>
+                <div className="reset-input-wrap">
+                  <Lock size={17} aria-hidden="true" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                  />
+                  <button type="button" className="reset-visibility" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="login-field-group">
-              <label htmlFor="confirmPassword" className="login-label">Confirm Password</label>
-              <div className="login-input-shell login-password-shell">
-                <span className="login-input-icon" aria-hidden="true">
-                  <Lock size={18} />
-                </span>
-                <input
-                  id="confirmPassword"
-                  type={showConfirm ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className="login-input"
-                  required
-                />
-                <button
-                  type="button"
-                  className="login-password-toggle"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                >
-                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+              <div className="reset-field">
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <div className="reset-input-wrap">
+                  <Lock size={17} aria-hidden="true" />
+                  <input
+                    id="confirmPassword"
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    required
+                  />
+                  <button type="button" className="reset-visibility" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                    {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              <strong>Password requirements:</strong>
-              <ul style={{ paddingLeft: '1.25rem', marginTop: '0.25rem', marginBottom: 0 }}>
-                <li>Minimum 8 characters</li>
-              </ul>
-            </div>
 
-            <div className="login-form-actions">
-              <Button type="submit" fullWidth isLoading={loading} className="login-submit-button">
-                <span>Create New Password</span>
-                <ArrowRight size={18} />
-              </Button>
-            </div>
-          </form>
-        </>
-      )}
-      
-      <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-        <Link to="/login" style={{ color: '#64748b', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 500 }}>
-          Back to Login
-        </Link>
+              <div className="reset-requirements"><strong>Password requirements</strong><span>Minimum 8 characters</span></div>
+              <Button type="submit" fullWidth isLoading={loading} className="reset-submit-button"><span>Create New Password</span><ArrowRight size={17} /></Button>
+            </form>
+          </>
+        )}
+
+        <Link to="/login" className="reset-back-link">Back to Login</Link>
       </div>
     </div>
   );

@@ -17,11 +17,23 @@ function hashToken(token) {
 export async function listOrganizations(request, response) {
   try {
     const result = await pool.query(
-      'SELECT id, name, slug, logo, status, created_at, updated_at FROM organizations ORDER BY created_at DESC'
+      `SELECT id, name, slug, logo, status, created_at, updated_at,
+        (SELECT COUNT(*) FROM users WHERE organization_id = organizations.id) AS total_users,
+        (SELECT COUNT(*) FROM resources WHERE organization_id = organizations.id) AS total_resources,
+        (SELECT COUNT(*) FROM bookings WHERE organization_id = organizations.id) AS total_bookings
+       FROM organizations
+       ORDER BY created_at DESC`
     );
     return response.json({
       success: true,
-      organizations: result.rows
+      organizations: result.rows.map((organization) => ({
+        ...organization,
+        counts: {
+          users: parseInt(organization.total_users, 10) || 0,
+          resources: parseInt(organization.total_resources, 10) || 0,
+          bookings: parseInt(organization.total_bookings, 10) || 0
+        }
+      }))
     });
   } catch (error) {
     console.error('List Organizations Error:', error);
@@ -207,6 +219,30 @@ export async function updateOrganizationStatus(request, response) {
   }
 }
 
+export async function updateOrganization(request, response) {
+  const orgId = request.params.id;
+  const name = typeof request.body?.name === 'string' ? request.body.name.trim() : '';
+  const slug = typeof request.body?.slug === 'string' ? request.body.slug.trim().toLowerCase() : '';
+  const logo = typeof request.body?.logo === 'string' ? request.body.logo.trim() : null;
+
+  if (!name || !slug) return buildError(response, 400, 'Organization name and slug are required.');
+  if (!/^[a-z0-9-]+$/.test(slug)) return buildError(response, 400, 'Slug can only contain lowercase letters, numbers, and hyphens.');
+
+  try {
+    const result = await pool.query(
+      `UPDATE organizations SET name = $1, slug = $2, logo = $3, updated_at = NOW()
+       WHERE id = $4 RETURNING id, name, slug, logo, status, created_at, updated_at`,
+      [name, slug, logo || null, orgId]
+    );
+    if (result.rows.length === 0) return buildError(response, 404, 'Organization not found.');
+    return response.json({ success: true, organization: result.rows[0], message: 'Organization details updated successfully.' });
+  } catch (error) {
+    if (error?.code === '23505') return buildError(response, 409, 'An organization with this slug already exists.');
+    console.error('Update Organization Error:', error);
+    return buildError(response, 500, 'Unable to update organization details.');
+  }
+}
+
 export async function provisionFirstAdmin(request, response) {
   const orgId = request.params.id;
   const name = typeof request.body?.name === 'string' ? request.body.name.trim() : '';
@@ -231,16 +267,6 @@ export async function provisionFirstAdmin(request, response) {
       return buildError(response, 400, 'Cannot provision admin for a deactivated organization.');
     }
 
-    // Check if an admin already exists for this org
-    const existingAdmin = await pool.query(
-      'SELECT id FROM users WHERE organization_id = $1 AND role = $2',
-      [orgId, 'ADMIN']
-    );
-
-    if (existingAdmin.rows.length > 0) {
-      return buildError(response, 409, 'An administrator already exists for this organization.');
-    }
-
     // Check if user email already exists globally
     const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
     if (existingUser.rows.length > 0) {
@@ -255,7 +281,7 @@ export async function provisionFirstAdmin(request, response) {
 
     // Create the admin user
     const insertUserResult = await pool.query(
-      'INSERT INTO users (name, email, password_hash, role, organization_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      'INSERT INTO users (name, email, password_hash, role, organization_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, status, created_at',
       [name, email, passwordHash, 'ADMIN', orgId]
     );
 
@@ -281,13 +307,62 @@ export async function provisionFirstAdmin(request, response) {
 
     return response.status(201).json({
       success: true,
-      message: 'First administrator successfully provisioned. A password setup email has been sent.'
+      admin: insertUserResult.rows[0],
+      message: 'Administrator successfully added. A password setup email has been sent.'
     });
 
   } catch (error) {
     await pool.query('ROLLBACK');
+    if (error?.code === '23505') {
+      return buildError(response, 409, 'A user with this email already exists.');
+    }
     console.error('Provision Admin Error:', error);
     return buildError(response, 500, 'Unable to provision administrator.');
+  }
+}
+
+export async function updateOrganizationAdmin(request, response) {
+  const organizationId = request.params.id;
+  const adminId = request.params.adminId;
+  const name = typeof request.body?.name === 'string' ? request.body.name.trim() : '';
+  const email = typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : '';
+  const status = request.body?.status;
+
+  if (!name || !email) return buildError(response, 400, 'Name and email are required.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return buildError(response, 400, 'Please provide a valid email address.');
+  if (status && !['ACTIVE', 'DEACTIVATED'].includes(status)) return buildError(response, 400, 'Invalid administrator status.');
+
+  try {
+    const result = await pool.query(
+      `UPDATE users SET name = $1, email = $2, status = COALESCE($3, status), updated_at = NOW()
+       WHERE id = $4 AND organization_id = $5 AND role = 'ADMIN'
+       RETURNING id, name, email, role, status, created_at`,
+      [name, email, status || null, adminId, organizationId]
+    );
+    if (result.rows.length === 0) return buildError(response, 404, 'Administrator not found in this organization.');
+    return response.json({ success: true, admin: result.rows[0], message: 'Administrator updated successfully.' });
+  } catch (error) {
+    if (error?.code === '23505') return buildError(response, 409, 'A user with this email already exists.');
+    console.error('Update Organization Admin Error:', error);
+    return buildError(response, 500, 'Unable to update administrator.');
+  }
+}
+
+export async function deleteOrganizationAdmin(request, response) {
+  const organizationId = request.params.id;
+  const adminId = request.params.adminId;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM users WHERE id = $1 AND organization_id = $2 AND role = 'ADMIN'
+       RETURNING id`,
+      [adminId, organizationId]
+    );
+    if (result.rows.length === 0) return buildError(response, 404, 'Administrator not found in this organization.');
+    return response.json({ success: true, message: 'Administrator removed successfully.' });
+  } catch (error) {
+    console.error('Delete Organization Admin Error:', error);
+    return buildError(response, 500, 'Unable to remove administrator.');
   }
 }
 

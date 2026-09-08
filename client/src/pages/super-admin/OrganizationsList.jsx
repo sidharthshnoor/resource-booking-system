@@ -1,15 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AlertTriangle, Building2, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Eye, MoreVertical, Plus, Search, Users, XCircle } from 'lucide-react';
 import superAdminService from '../../services/superAdmin.service';
-import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { Plus, Settings, AlertTriangle, ShieldCheck } from 'lucide-react';
+
+const emptyFilters = { search: '', status: 'ALL', sort: 'created' };
+
+function formatDate(value) {
+  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function StatusBadge({ status }) {
+  const active = status === 'ACTIVE';
+  return <span className={`org-status ${active ? 'is-active' : 'is-deactivated'}`}><span />{status}</span>;
+}
+
+function MetricCard({ icon: Icon, label, value, tone }) {
+  return <div className={`org-metric org-metric-${tone}`}><div className="org-metric-icon"><Icon size={22} /></div><div><p>{label}</p><strong>{value}</strong></div></div>;
+}
 
 export default function OrganizationsList() {
   const [organizations, setOrganizations] = useState([]);
+  const [filters, setFilters] = useState(emptyFilters);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+  const [openMenu, setOpenMenu] = useState(null);
   const [deleteModalOrg, setDeleteModalOrg] = useState(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -18,8 +33,9 @@ export default function OrganizationsList() {
   const fetchOrgs = async () => {
     try {
       setLoading(true);
-      const res = await superAdminService.getOrganizations();
-      setOrganizations(res.organizations);
+      const response = await superAdminService.getOrganizations();
+      setOrganizations(response.organizations || []);
+      setError('');
     } catch (err) {
       setError('Failed to load organizations.');
     } finally {
@@ -29,208 +45,62 @@ export default function OrganizationsList() {
 
   useEffect(() => {
     fetchOrgs();
+    const handleGlobalSearch = (event) => setFilters((current) => ({ ...current, search: event.detail }));
+    window.addEventListener('super-admin-search', handleGlobalSearch);
+    return () => window.removeEventListener('super-admin-search', handleGlobalSearch);
   }, []);
 
-  const toggleStatus = async (org) => {
-    if (org.slug === 'default') {
-      alert("Cannot deactivate the default organization.");
-      return;
-    }
-    const newStatus = org.status === 'ACTIVE' ? 'DEACTIVATED' : 'ACTIVE';
+  const filteredOrganizations = useMemo(() => {
+    const query = filters.search.trim().toLowerCase();
+    return organizations.filter((organization) => {
+      const matchesSearch = !query || [organization.name, organization.slug].some((field) => field?.toLowerCase().includes(query));
+      return matchesSearch && (filters.status === 'ALL' || organization.status === filters.status);
+    }).sort((left, right) => {
+      if (filters.sort === 'name') return left.name.localeCompare(right.name);
+      if (filters.sort === 'users') return (right.counts?.users || 0) - (left.counts?.users || 0);
+      return new Date(right.created_at) - new Date(left.created_at);
+    });
+  }, [filters, organizations]);
+
+  const totals = organizations.reduce((summary, organization) => ({
+    users: summary.users + (organization.counts?.users || 0),
+    active: summary.active + (organization.status === 'ACTIVE' ? 1 : 0),
+    deactivated: summary.deactivated + (organization.status === 'DEACTIVATED' ? 1 : 0)
+  }), { users: 0, active: 0, deactivated: 0 });
+
+  const toggleStatus = async (organization) => {
+    if (organization.slug === 'default') return alert('Cannot deactivate the default organization.');
     try {
-      await superAdminService.updateOrganizationStatus(org.id, newStatus);
-      fetchOrgs(); // Refresh
-    } catch (err) {
-      alert(err.message || 'Failed to update status');
-    }
+      await superAdminService.updateOrganizationStatus(organization.id, organization.status === 'ACTIVE' ? 'DEACTIVATED' : 'ACTIVE');
+      setOpenMenu(null);
+      fetchOrgs();
+    } catch (err) { alert(err.message || 'Failed to update status'); }
   };
 
   const handleDelete = async () => {
     if (!deleteModalOrg) return;
-    
     setDeleteLoading(true);
     setDeleteError('');
-    
     try {
       await superAdminService.deleteOrganization(deleteModalOrg.id);
       setDeleteModalOrg(null);
       setDeleteConfirmName('');
-      fetchOrgs(); // Refresh
-    } catch (err) {
-      setDeleteError(err.message || 'Failed to delete organization');
-    } finally {
-      setDeleteLoading(false);
-    }
+      fetchOrgs();
+    } catch (err) { setDeleteError(err.message || 'Failed to delete organization'); }
+    finally { setDeleteLoading(false); }
   };
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Organizations</h1>
-          <p className="text-slate-500">Manage all tenant organizations on the platform.</p>
-        </div>
-        <Link to="/super-admin/organizations/new">
-          <Button>
-            <Plus size={18} className="mr-2" />
-            New Organization
-          </Button>
-        </Link>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 flex items-center">
-          <AlertTriangle size={20} className="mr-2" />
-          {error}
-        </div>
-      )}
-
-      <Card>
-        {loading ? (
-          <div className="p-8 text-center text-slate-500">Loading organizations...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="py-3 px-4 font-semibold text-slate-600">Name</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Slug</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Status</th>
-                  <th className="py-3 px-4 font-semibold text-slate-600">Created At</th>
-                  <th className="py-3 px-4 text-right font-semibold text-slate-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {organizations.map((org) => (
-                  <tr key={org.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        {org.logo ? (
-                          <img src={org.logo} alt="Logo" className="w-8 h-8 rounded object-contain border border-slate-200" />
-                        ) : (
-                          <div className="w-8 h-8 rounded bg-sky-100 flex items-center justify-center text-sky-600 font-bold">
-                            {org.name.charAt(0)}
-                          </div>
-                        )}
-                        <span className="font-medium text-slate-800">{org.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-slate-600 font-mono text-sm">{org.slug}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        org.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {org.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-500 text-sm">
-                      {new Date(org.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 text-right space-x-2">
-                      <Link to={`/super-admin/organizations/${org.id}`}>
-                        <Button variant="secondary" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                      <Button 
-                        variant={org.status === 'ACTIVE' ? 'danger' : 'primary'} 
-                        size="sm"
-                        onClick={() => toggleStatus(org)}
-                        disabled={org.slug === 'default'}
-                      >
-                        {org.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => setDeleteModalOrg(org)}
-                        disabled={org.slug === 'default'}
-                        className="ml-2"
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {organizations.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="py-8 text-center text-slate-500">
-                      No organizations found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-
-      {deleteModalOrg && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 text-red-600 mb-4">
-              <AlertTriangle size={24} />
-              <h3 className="text-xl font-bold">Delete Organization?</h3>
-            </div>
-            
-            <p className="text-slate-600 mb-4">
-              This will permanently delete <span className="font-bold text-slate-800">{deleteModalOrg.name}</span> and all associated:
-            </p>
-            <ul className="list-disc pl-5 text-slate-600 mb-6 space-y-1">
-              <li>Users</li>
-              <li>Resources</li>
-              <li>Bookings</li>
-              <li>Invitations and related tenant data</li>
-            </ul>
-            
-            <div className="bg-red-50 text-red-800 p-3 rounded-lg text-sm mb-6 border border-red-100">
-              This action <strong>cannot be undone</strong>.
-            </div>
-
-            {deleteError && (
-              <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">
-                {deleteError}
-              </div>
-            )}
-
-            <div className="mb-6">
-              <label htmlFor="confirmName" className="block text-sm font-medium text-slate-700 mb-2">
-                Type <strong>"{deleteModalOrg.name}"</strong> to confirm deletion.
-              </label>
-              <input
-                type="text"
-                id="confirmName"
-                value={deleteConfirmName}
-                onChange={(e) => setDeleteConfirmName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded focus:ring-red-500 focus:border-red-500 outline-none"
-                placeholder={deleteModalOrg.name}
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <Button 
-                variant="secondary" 
-                onClick={() => {
-                  setDeleteModalOrg(null);
-                  setDeleteConfirmName('');
-                  setDeleteError('');
-                }}
-                disabled={deleteLoading}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="danger" 
-                onClick={handleDelete}
-                disabled={deleteConfirmName !== deleteModalOrg.name || deleteLoading}
-                isLoading={deleteLoading}
-              >
-                Delete Organization
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="organizations-page">
+    <div className="org-page-header"><div><p className="org-eyebrow">PLATFORM DIRECTORY</p><h1>Organizations</h1><p>Manage all tenant organizations on the platform.</p></div><Link to="/super-admin/organizations/new" className="org-new-button"><Plus size={18} /> New Organization</Link></div>
+    {error && <div className="org-error"><AlertTriangle size={20} /> {error}</div>}
+    <section className="org-metrics" aria-label="Organization metrics"><MetricCard icon={Building2} label="Total Organizations" value={organizations.length} tone="blue" /><MetricCard icon={CheckCircle2} label="Active Organizations" value={totals.active} tone="green" /><MetricCard icon={XCircle} label="Deactivated Organizations" value={totals.deactivated} tone="red" /><MetricCard icon={Users} label="Total Users (All Orgs)" value={totals.users} tone="violet" /></section>
+    <section className="org-table-card">
+      <div className="org-filter-row"><label className="org-search-input"><Search size={17} /><input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Search by name, slug, or keyword..." /></label><label className="org-filter-field"><span>Status</span><span className="org-select-wrap"><select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option value="ALL">All Statuses</option><option value="ACTIVE">Active</option><option value="DEACTIVATED">Deactivated</option></select><ChevronDown size={15} /></span></label><label className="org-filter-field"><span>Sort By</span><span className="org-select-wrap"><select value={filters.sort} onChange={(event) => setFilters({ ...filters, sort: event.target.value })}><option value="created">Recently Created</option><option value="name">Name</option><option value="users">Most Users</option></select><ChevronDown size={15} /></span></label><button type="button" className="org-clear-button" onClick={() => setFilters(emptyFilters)}>Clear Filters</button></div>
+      <div className="org-table-scroll"><table className="org-table"><thead><tr><th>#</th><th>Name</th><th>Slug</th><th>Status</th><th>Users</th><th>Resources</th><th>Bookings</th><th>Created At</th><th>Actions</th></tr></thead><tbody>{loading ? <tr><td colSpan="9" className="org-empty">Loading organizations...</td></tr> : filteredOrganizations.map((organization, index) => <tr key={organization.id}><td className="org-index">{index + 1}</td><td><div className="org-name-cell">{organization.logo ? <img src={organization.logo} alt="" /> : <span className="org-avatar">{organization.name.charAt(0).toUpperCase()}</span>}<strong>{organization.name}</strong></div></td><td className="org-slug">{organization.slug}</td><td><StatusBadge status={organization.status} /></td><td>{organization.counts?.users || 0}</td><td>{organization.counts?.resources || 0}</td><td>{organization.counts?.bookings || 0}</td><td className="org-date">{formatDate(organization.created_at)}</td><td><div className="org-actions"><Link to={`/super-admin/organizations/${organization.id}`} className="org-view-button"><Eye size={15} /> View</Link><div className="org-menu-wrap"><button className="org-icon-button" onClick={() => setOpenMenu(openMenu === organization.id ? null : organization.id)} aria-label={`Actions for ${organization.name}`}><MoreVertical size={18} /></button>{openMenu === organization.id && <div className="org-actions-menu"><Link to={`/super-admin/organizations/${organization.id}`} onClick={() => setOpenMenu(null)}>View</Link><button disabled={organization.slug === 'default'} onClick={() => toggleStatus(organization)}>{organization.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</button><button className="danger" disabled={organization.slug === 'default'} onClick={() => { setDeleteModalOrg(organization); setOpenMenu(null); }}>Delete</button></div>}</div></div></td></tr>)}{!loading && filteredOrganizations.length === 0 && <tr><td colSpan="9" className="org-empty">No organizations match the current filters.</td></tr>}</tbody></table></div>
+      <div className="org-pagination"><span>Showing {filteredOrganizations.length ? 1 : 0} to {filteredOrganizations.length} of {filteredOrganizations.length} organizations</span><div><button disabled aria-label="Previous page"><ChevronLeft size={17} /></button><button className="current-page">1</button><button disabled aria-label="Next page"><ChevronRight size={17} /></button></div></div>
+    </section>
+    <section className="org-about"><div className="org-about-icon"><CircleAlert size={18} /></div><div><h2>About Organizations</h2><p>Organizations are independent tenants on the RBS platform. Each organization has its own users, resources, and bookings.</p></div></section>
+    <footer className="org-footer"><span>© 2026 RBS Enterprise. All rights reserved.</span><span>Resource Booking System&nbsp; | &nbsp;Platform Administration</span></footer>
+    {deleteModalOrg && <div className="org-modal-backdrop"><div className="org-delete-modal"><div className="org-modal-title"><AlertTriangle size={22} /><h2>Delete Organization?</h2></div><p>This will permanently delete <strong>{deleteModalOrg.name}</strong> and all associated users, resources, bookings, invitations, and tenant data.</p><div className="org-delete-warning">This action <strong>cannot be undone</strong>.</div><label>Type <strong>"{deleteModalOrg.name}"</strong> to confirm deletion.<input value={deleteConfirmName} onChange={(event) => setDeleteConfirmName(event.target.value)} placeholder={deleteModalOrg.name} /></label>{deleteError && <div className="org-error">{deleteError}</div>}<div className="org-modal-actions"><Button variant="secondary" onClick={() => { setDeleteModalOrg(null); setDeleteConfirmName(''); setDeleteError(''); }} disabled={deleteLoading}>Cancel</Button><Button variant="danger" onClick={handleDelete} disabled={deleteConfirmName !== deleteModalOrg.name || deleteLoading} isLoading={deleteLoading}>Delete Organization</Button></div></div></div>}
+  </div>;
 }

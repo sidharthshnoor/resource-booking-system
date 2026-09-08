@@ -20,6 +20,7 @@ import OrganizationsList from './pages/super-admin/OrganizationsList';
 import OrganizationCreate from './pages/super-admin/OrganizationCreate';
 import OrganizationDetails from './pages/super-admin/OrganizationDetails';
 import SuperAdminLogin from './pages/super-admin/SuperAdminLogin';
+import GlobalDashboard from './pages/super-admin/GlobalDashboard';
 
 import Dashboard from './pages/user/Dashboard';
 import BrowseResources from './pages/user/BrowseResources';
@@ -42,6 +43,9 @@ export default function App() {
         <Routes>
           {/* Landing Page */}
           <Route path="/" element={<Landing />} />
+
+          {/* Public password reset links are generated without an organization slug. */}
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Public / Auth Routes */}
           <Route path="/org/:slug" element={<OrganizationProvider><Outlet /></OrganizationProvider>}>
@@ -80,12 +84,7 @@ export default function App() {
           <Route path="/super-admin/login" element={<SuperAdminLogin />} />
           <Route path="/super-admin" element={<SuperAdminLayout />}>
             <Route index element={<Navigate to="organizations" replace />} />
-            <Route path="dashboard" element={
-              <div className="text-center p-8 text-slate-500">
-                <h2 className="text-2xl font-bold mb-4">Global Dashboard</h2>
-                <p>Welcome to the Super Admin platform. Navigate to Organizations to manage tenants.</p>
-              </div>
-            } />
+            <Route path="dashboard" element={<GlobalDashboard />} />
             <Route path="organizations" element={<OrganizationsList />} />
             <Route path="organizations/new" element={<OrganizationCreate />} />
             <Route path="organizations/:id" element={<OrganizationDetails />} />
