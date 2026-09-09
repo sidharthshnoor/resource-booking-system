@@ -1,13 +1,13 @@
 import app from './app.js';
 import { env } from './config/env.js';
 import { pool, verifyDatabaseConnection } from './config/database.js';
-import { verifySMTPConnection } from './utils/email.js';
+import { verifyEmailConfiguration } from './utils/email.js';
 
 try {
   await verifyDatabaseConnection();
   console.log('PostgreSQL connection verified');
 
-  await verifySMTPConnection();
+  verifyEmailConfiguration();
 
   const server = app.listen(env.port, () => {
     console.log(`Resource Booking API listening on port ${env.port}`);

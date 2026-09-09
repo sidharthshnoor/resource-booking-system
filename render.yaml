@@ -26,15 +26,9 @@ services:
           name: resource-booking-client
           type: web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: SMTP_HOST
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM
+      - key: EMAIL_FROM
         sync: false
 
   - type: web

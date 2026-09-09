@@ -1,57 +1,38 @@
-import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
 
-let transporter;
-
-if (env.smtp.host) {
-  transporter = nodemailer.createTransport({
-    host: env.smtp.host,
-    port: env.smtp.port,
-    secure: env.smtp.port === 465,
-    auth: {
-      user: env.smtp.user,
-      pass: env.smtp.pass,
-    },
-  });
-}
-
-export async function verifySMTPConnection() {
-  if (!transporter) {
-    console.log('SMTP configured: no');
-    return false;
-  }
-  
-  try {
-    await transporter.verify();
-    console.log('SMTP configured: yes');
-    console.log('SMTP connection: verified');
-    console.log(`SMTP sender: ${env.smtp.from}`);
-    return true;
-  } catch (error) {
-    console.log('SMTP configured: yes');
-    console.log('SMTP connection: failed');
-    console.error('SMTP Error:', error.message);
-    return false;
-  }
+export function verifyEmailConfiguration() {
+  const configured = Boolean(env.email.apiKey);
+  console.log(`HTTPS email configured: ${configured ? 'yes' : 'no'}`);
 }
 
 export async function sendEmail({ to, subject, text }) {
-  if (!transporter) {
-    console.error('SMTP Configuration Error: Missing SMTP settings in environment variables.');
+  if (!env.email.apiKey) {
+    console.error('HTTPS email configuration error: email provider is not configured.');
     throw new Error('Email service is not properly configured.');
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: env.smtp.from,
-      to,
-      subject,
-      text,
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.email.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: env.email.from,
+        to: [to],
+        subject,
+        text
+      })
     });
-    console.log(`Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+
+    if (!response.ok) {
+      throw new Error(`Email provider returned HTTP ${response.status}.`);
+    }
+
     return true;
   } catch (error) {
-    console.error(`Error sending email to ${to}:`, error);
+    console.error('HTTPS email delivery failed:', error.message);
     throw new Error('Failed to send email.');
   }
 }
