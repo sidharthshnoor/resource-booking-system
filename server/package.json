@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "migrate": "node migrate.js",
+    "provision-super-admin": "node scripts/provisionSuperAdmin.js",
     "start": "node src/server.js"
   },
   "dependencies": {
