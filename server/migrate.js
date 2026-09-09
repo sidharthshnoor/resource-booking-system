@@ -84,6 +84,7 @@ async function run() {
   } catch(e) {
     await client.query('ROLLBACK');
     console.error('Migration failed:', e);
+    process.exitCode = 1;
   } finally {
     client.release();
     pool.end();

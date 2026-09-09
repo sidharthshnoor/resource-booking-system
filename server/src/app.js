@@ -7,8 +7,27 @@ import resourceRoutes from './routes/resourceRoutes.js';
 import adminUserRoutes from './routes/adminUserRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import superAdminRoutes from './routes/superAdminRoutes.js';
+import { env } from './config/env.js';
 
 const app = express();
+
+app.use((request, response, next) => {
+	const requestOrigin = request.headers.origin;
+	const allowedOrigins = [env.frontendUrl, 'http://localhost:5173'];
+
+	if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+		response.setHeader('Access-Control-Allow-Origin', requestOrigin);
+		response.setHeader('Vary', 'Origin');
+		response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+		response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+	}
+
+	if (request.method === 'OPTIONS') {
+		return response.sendStatus(requestOrigin && allowedOrigins.includes(requestOrigin) ? 204 : 403);
+	}
+
+	return next();
+});
 
 app.use(express.json());
 app.use('/api/health', healthRoutes);

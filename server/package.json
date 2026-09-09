@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
+    "migrate": "node migrate.js",
     "start": "node src/server.js"
   },
   "dependencies": {

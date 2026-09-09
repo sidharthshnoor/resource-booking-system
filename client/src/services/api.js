@@ -1,5 +1,4 @@
-// Mock data mechanism can be replaced with real backend URL
-const API_BASE_URL = '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 /**
  * Helper to handle fetch responses and throw errors properly
