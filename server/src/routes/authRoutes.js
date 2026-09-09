@@ -3,6 +3,7 @@ import {
   getCurrentUser, 
   login, 
   register,
+  changePassword,
   inviteUser,
   createAccount,
   forgotPassword,
@@ -14,9 +15,10 @@ import { requireTenant } from '../middleware/tenantMiddleware.js';
 
 const authRoutes = Router();
 
-authRoutes.post('/register', register);
+authRoutes.post('/register/:slug', register);
 authRoutes.post('/login', login);
 authRoutes.get('/me', requireAuth, requireTenant, getCurrentUser);
+authRoutes.post('/change-password', requireAuth, requireTenant, changePassword);
 
 // New Auth Flow Routes
 authRoutes.post('/invite', requireAuth, requireTenant, requireAdmin, inviteUser);

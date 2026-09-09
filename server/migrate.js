@@ -1,91 +1,83 @@
 import { pool } from './src/config/database.js';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
 async function run() {
   const client = await pool.connect();
+  let inTransaction = false;
   try {
-    // 1. Create migrations tracking table if not exists
+    // A database with application objects but no migration ledger cannot be
+    // safely reconstructed from individual tables/columns.  In particular, a
+    // partially applied multi-statement migration can look deceptively done.
+    const ledgerExists = await client.query(
+      "SELECT to_regclass('public.migrations') IS NOT NULL AS exists"
+    );
+    const applicationSchemaExists = await client.query(`
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_tables
+        WHERE schemaname = 'public'
+          AND tablename IN ('users', 'resources', 'bookings', 'auth_tokens', 'organizations')
+      ) AS exists
+    `);
+
+    if (!ledgerExists.rows[0].exists && applicationSchemaExists.rows[0].exists) {
+      throw new Error(
+        'Migration tracking is missing on a non-empty application database. ' +
+        'Refusing to infer completed migrations from schema objects; establish ' +
+        'a reviewed migration ledger before running this command.'
+      );
+    }
+
+    // The ledger, not structural heuristics, is the source of truth.
     await client.query(`
       CREATE TABLE IF NOT EXISTS migrations (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) UNIQUE NOT NULL,
+        checksum CHAR(64),
         executed_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await client.query('ALTER TABLE migrations ADD COLUMN IF NOT EXISTS checksum CHAR(64)');
+    await client.query('SELECT pg_advisory_lock(hashtext($1))', ['resource-booking-system:migrations']);
 
-    // 2. Deterministic Legacy Backfill (Checking each migration specifically)
-    
-    // Check 001: users table
-    const check001 = await client.query("SELECT to_regclass('public.users') as regclass");
-    if (check001.rows[0].regclass) {
-      await client.query("INSERT INTO migrations (name) VALUES ('001_initial_schema.sql') ON CONFLICT (name) DO NOTHING");
-    }
-
-    // Check 002: users.status column
-    const check002 = await client.query(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name='users' AND column_name='status'
-    `);
-    if (check002.rows.length > 0) {
-      await client.query("INSERT INTO migrations (name) VALUES ('002_user_status.sql') ON CONFLICT (name) DO NOTHING");
-    }
-
-    // Check 003: users.last_login column
-    const check003 = await client.query(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name='users' AND column_name='last_login'
-    `);
-    if (check003.rows.length > 0) {
-      await client.query("INSERT INTO migrations (name) VALUES ('003_last_login.sql') ON CONFLICT (name) DO NOTHING");
-    }
-
-    // Check 004: auth_tokens table
-    const check004 = await client.query("SELECT to_regclass('public.auth_tokens') as regclass");
-    if (check004.rows[0].regclass) {
-      await client.query("INSERT INTO migrations (name) VALUES ('004_auth_tokens.sql') ON CONFLICT (name) DO NOTHING");
-    }
-
-    // Check 005: organizations table
-    const check005 = await client.query("SELECT to_regclass('public.organizations') as regclass");
-    if (check005.rows[0].regclass) {
-      await client.query("INSERT INTO migrations (name) VALUES ('005_multi_tenant.sql') ON CONFLICT (name) DO NOTHING");
-    }
-
-    // Check 006: auth_tokens.organization_id column
-    const check006 = await client.query(`
-      SELECT column_name FROM information_schema.columns 
-      WHERE table_name='auth_tokens' AND column_name='organization_id'
-    `);
-    if (check006.rows.length > 0) {
-      await client.query("INSERT INTO migrations (name) VALUES ('006_auth_tokens_org.sql') ON CONFLICT (name) DO NOTHING");
-    }
-
-    // 3. Read and sort migration files
+    // Read and sort migration files.
     const migrationsDir = path.join(process.cwd(), 'src/db/migrations');
     const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
 
-    // 4. Execute pending migrations
+    // Execute pending migrations.  SQL files must not manage transactions;
+    // this makes applying the SQL and recording it one atomic operation on
+    // the same PostgreSQL client.
     for (const file of files) {
-      const isExecuted = await client.query('SELECT id FROM migrations WHERE name = $1', [file]);
-      if (isExecuted.rows.length === 0) {
+      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
+      const checksum = crypto.createHash('sha256').update(sql).digest('hex');
+      const executed = await client.query('SELECT id, checksum FROM migrations WHERE name = $1', [file]);
+
+      if (executed.rows.length > 0) {
+        const recordedChecksum = executed.rows[0].checksum;
+        if (recordedChecksum && recordedChecksum !== checksum) {
+          throw new Error(`Migration file was modified after execution: ${file}`);
+        }
+      } else {
         console.log(`Running migration: ${file}`);
-        const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
-        
         await client.query('BEGIN');
+        inTransaction = true;
         await client.query(sql);
-        await client.query('INSERT INTO migrations (name) VALUES ($1)', [file]);
+        await client.query('INSERT INTO migrations (name, checksum) VALUES ($1, $2)', [file, checksum]);
         await client.query('COMMIT');
+        inTransaction = false;
         
         console.log(`Migration ${file} successful`);
       }
     }
     console.log('All migrations are up to date.');
   } catch(e) {
-    await client.query('ROLLBACK');
+    if (inTransaction) await client.query('ROLLBACK');
     console.error('Migration failed:', e);
     process.exitCode = 1;
   } finally {
+    await client.query('SELECT pg_advisory_unlock(hashtext($1))', ['resource-booking-system:migrations']).catch(() => {});
     client.release();
     pool.end();
   }

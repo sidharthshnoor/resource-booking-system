@@ -66,20 +66,21 @@ export async function createOrganization(request, response) {
     return buildError(response, 400, 'Please provide a valid admin email address.');
   }
 
+  const client = await pool.connect();
   try {
-    const existingOrg = await pool.query('SELECT id FROM organizations WHERE slug = $1', [slug]);
+    const existingOrg = await client.query('SELECT id FROM organizations WHERE slug = $1', [slug]);
     if (existingOrg.rows.length > 0) {
       return buildError(response, 409, 'An organization with this slug already exists.');
     }
 
-    const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [adminEmail]);
+    const existingUser = await client.query('SELECT id FROM users WHERE LOWER(email) = $1', [adminEmail]);
     if (existingUser.rows.length > 0) {
       return buildError(response, 409, 'A user with this admin email already exists.');
     }
 
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    const orgResult = await pool.query(
+    const orgResult = await client.query(
       'INSERT INTO organizations (name, slug, logo, status) VALUES ($1, $2, $3, $4) RETURNING id, name, slug, logo, status, created_at',
       [name, slug, logo, 'ACTIVE']
     );
@@ -91,9 +92,11 @@ export async function createOrganization(request, response) {
     const passwordHash = await bcrypt.hash(dummyPassword, 12);
 
     // Create the admin user
-    const insertUserResult = await pool.query(
-      'INSERT INTO users (name, email, password_hash, role, organization_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role',
-      [adminName, adminEmail, passwordHash, 'ADMIN', newOrgId]
+    const insertUserResult = await client.query(
+      `INSERT INTO users (name, email, password_hash, role, status, organization_id, must_change_password)
+       VALUES ($1, $2, $3, 'ADMIN', 'ACTIVE', $4, true)
+       RETURNING id, name, email, role, status, must_change_password`,
+      [adminName, adminEmail, passwordHash, newOrgId]
     );
 
     const newUserId = insertUserResult.rows[0].id;
@@ -103,13 +106,13 @@ export async function createOrganization(request, response) {
     const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await pool.query(
+    await client.query(
       `INSERT INTO auth_tokens (type, email, user_id, token_hash, expires_at, organization_id)
        VALUES ('PASSWORD_RESET', $1, $2, $3, $4, $5)`,
       [adminEmail, newUserId, tokenHash, expiresAt, newOrgId]
     );
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
 
     let emailSent = false;
     try {
@@ -129,12 +132,14 @@ export async function createOrganization(request, response) {
     });
 
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     if (error && error.code === '23505') {
       return buildError(response, 409, 'An organization with this slug or a user with this email already exists.');
     }
     console.error('Create Organization Error:', error);
     return buildError(response, 500, 'Unable to create organization.');
+  } finally {
+    client.release();
   }
 }
 
@@ -257,8 +262,9 @@ export async function provisionFirstAdmin(request, response) {
     return buildError(response, 400, 'Please provide a valid email address.');
   }
 
+  const client = await pool.connect();
   try {
-    const orgResult = await pool.query('SELECT id, status FROM organizations WHERE id = $1', [orgId]);
+    const orgResult = await client.query('SELECT id, status FROM organizations WHERE id = $1', [orgId]);
     if (orgResult.rows.length === 0) {
       return buildError(response, 404, 'Organization not found.');
     }
@@ -268,21 +274,23 @@ export async function provisionFirstAdmin(request, response) {
     }
 
     // Check if user email already exists globally
-    const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
+    const existingUser = await client.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
     if (existingUser.rows.length > 0) {
       return buildError(response, 409, 'A user with this email already exists.');
     }
 
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
     // Generate a secure unguessable dummy password
     const dummyPassword = crypto.randomBytes(64).toString('hex');
     const passwordHash = await bcrypt.hash(dummyPassword, 12);
 
     // Create the admin user
-    const insertUserResult = await pool.query(
-      'INSERT INTO users (name, email, password_hash, role, organization_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, status, created_at',
-      [name, email, passwordHash, 'ADMIN', orgId]
+    const insertUserResult = await client.query(
+      `INSERT INTO users (name, email, password_hash, role, status, organization_id, must_change_password)
+       VALUES ($1, $2, $3, 'ADMIN', 'ACTIVE', $4, true)
+       RETURNING id, name, email, role, status, must_change_password, created_at`,
+      [name, email, passwordHash, orgId]
     );
 
     const newUserId = insertUserResult.rows[0].id;
@@ -292,13 +300,13 @@ export async function provisionFirstAdmin(request, response) {
     const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await pool.query(
+    await client.query(
       `INSERT INTO auth_tokens (type, email, user_id, token_hash, expires_at, organization_id)
        VALUES ('PASSWORD_RESET', $1, $2, $3, $4, $5)`,
       [email, newUserId, tokenHash, expiresAt, orgId]
     );
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
 
     // Fire and forget email
     sendPasswordResetEmail(email, rawToken).catch(err => {
@@ -312,12 +320,14 @@ export async function provisionFirstAdmin(request, response) {
     });
 
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     if (error?.code === '23505') {
       return buildError(response, 409, 'A user with this email already exists.');
     }
     console.error('Provision Admin Error:', error);
     return buildError(response, 500, 'Unable to provision administrator.');
+  } finally {
+    client.release();
   }
 }
 
@@ -373,8 +383,9 @@ export async function deleteOrganization(request, response) {
     return buildError(response, 400, 'Organization ID is required.');
   }
 
+  const client = await pool.connect();
   try {
-    const orgResult = await pool.query('SELECT id, slug FROM organizations WHERE id = $1', [orgId]);
+    const orgResult = await client.query('SELECT id, slug FROM organizations WHERE id = $1', [orgId]);
     
     if (orgResult.rows.length === 0) {
       return buildError(response, 404, 'Organization not found.');
@@ -386,7 +397,7 @@ export async function deleteOrganization(request, response) {
       return buildError(response, 400, 'Cannot delete the default organization.');
     }
 
-    const superAdminResult = await pool.query(
+    const superAdminResult = await client.query(
       'SELECT id FROM users WHERE organization_id = $1 AND role = $2',
       [orgId, 'SUPER_ADMIN']
     );
@@ -395,19 +406,21 @@ export async function deleteOrganization(request, response) {
       return buildError(response, 400, 'Cannot delete an organization that contains SUPER_ADMIN accounts.');
     }
 
-    await pool.query('BEGIN');
+    await client.query('BEGIN');
 
-    await pool.query('DELETE FROM organizations WHERE id = $1', [orgId]);
+    await client.query('DELETE FROM organizations WHERE id = $1', [orgId]);
 
-    await pool.query('COMMIT');
+    await client.query('COMMIT');
 
     return response.json({
       success: true,
       message: 'Organization and all related data successfully deleted.'
     });
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Delete Organization Error:', error);
     return buildError(response, 500, 'Unable to delete organization.');
+  } finally {
+    client.release();
   }
 }

@@ -1,5 +1,3 @@
-BEGIN;
-
 -- 1. Create organization_status type
 CREATE TYPE organization_status AS ENUM ('ACTIVE', 'DEACTIVATED');
 
@@ -67,5 +65,3 @@ CREATE INDEX auth_tokens_organization_id_idx ON auth_tokens (organization_id);
 CREATE TRIGGER organizations_set_updated_at
   BEFORE UPDATE ON organizations
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
-COMMIT;

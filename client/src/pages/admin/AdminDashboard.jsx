@@ -3,8 +3,10 @@ import adminService from '../../services/admin.service';
 import Card from '../../components/ui/Card';
 import { Users, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useOrganization } from '../../context/OrganizationContext';
 
 export default function AdminDashboard() {
+  const { organization } = useOrganization();
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -79,7 +81,7 @@ export default function AdminDashboard() {
         <Card>
           <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-4)' }}>
             <h3 style={{ margin: 0 }}>Action Required</h3>
-            <Link to="/admin/bookings" className="text-label" style={{ fontWeight: 600 }}>Review All</Link>
+            <Link to={`/org/${organization.slug}/admin/bookings`} className="text-label" style={{ fontWeight: 600 }}>Review All</Link>
           </div>
           
           {stats.pending > 0 ? (
@@ -87,7 +89,7 @@ export default function AdminDashboard() {
               <div>
                 <strong>{stats.pending} booking requests</strong> are awaiting your approval.
               </div>
-              <Link to="/admin/bookings">
+              <Link to={`/org/${organization.slug}/admin/bookings`}>
                 <button style={{ padding: '6px 12px', background: 'var(--color-status-pending-text)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 500 }}>
                   Review
                 </button>

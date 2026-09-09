@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Mail, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import authService from '../../services/auth.service';
 import Button from '../../components/ui/Button';
 
 export default function ForgotPassword() {
+  const { slug } = useParams();
+  const loginPath = slug ? `/org/${slug}/login` : '/login';
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -92,7 +94,7 @@ export default function ForgotPassword() {
           </Button>
         </div>
 
-        <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 500 }}>
+        <Link to={loginPath} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 500 }}>
           <ArrowLeft size={16} /> Back to Login
         </Link>
       </div>
@@ -142,7 +144,7 @@ export default function ForgotPassword() {
       </form>
 
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 500 }}>
+        <Link to={loginPath} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 500 }}>
           <ArrowLeft size={16} /> Back to Login
         </Link>
       </div>

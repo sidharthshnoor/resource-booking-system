@@ -25,3 +25,14 @@ export async function requireTenant(request, response, next) {
     return response.status(500).json({ success: false, message: 'Unable to verify organization.' });
   }
 }
+
+export function requireTenantUser(request, response, next) {
+  if (request.user?.role === 'SUPER_ADMIN') {
+    return response.status(403).json({
+      success: false,
+      message: 'Super Administrators must use the Super Admin interface.'
+    });
+  }
+
+  return requireTenant(request, response, next);
+}

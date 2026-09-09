@@ -60,7 +60,7 @@ export default function Landing() {
           
           <div className="landing-auth-links">
             <Link to="/login" className="btn btn-outline">Sign In</Link>
-            <Link to="/register" className="btn btn-primary">Get Started</Link>
+            <Link to="/login" className="btn btn-primary">Get Started</Link>
           </div>
         </div>
       </header>
@@ -79,7 +79,7 @@ export default function Landing() {
               Discover, book and manage shared resources through one simple platform built for modern organizations.
             </p>
             <div className="hero-actions">
-              <Link to="/register" className="btn btn-primary btn-lg">Get Started</Link>
+              <Link to="/login" className="btn btn-primary btn-lg">Get Started</Link>
               <a href="#resources" className="btn btn-outline btn-lg">Explore Resources</a>
             </div>
             
@@ -1085,7 +1085,7 @@ export default function Landing() {
               <p>Give your organization a simpler way to discover, book and manage shared resources.</p>
             </div>
             <div className="cta-actions">
-              <Link to="/register" className="btn btn-primary btn-lg">Get Started</Link>
+              <Link to="/login" className="btn btn-primary btn-lg">Get Started</Link>
               <Link to="/login" className="btn btn-outline border-white text-white hover-bg-white-10 btn-lg">Sign In</Link>
             </div>
           </div>

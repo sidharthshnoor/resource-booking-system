@@ -1,6 +1,45 @@
-import { findUsers, updateUserStatus as updateStatusInDb, getUserById, deleteUserById } from '../models/userModel.js';
+import bcrypt from 'bcrypt';
+import { pool } from '../config/database.js';
+import { findUsers, updateUserStatus as updateStatusInDb, getUserById, deleteUserById, createAdmin as createAdminInDb } from '../models/userModel.js';
 
 const validRoles = new Set(['USER', 'ADMIN']);
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function createAdmin(request, response) {
+  const name = typeof request.body?.name === 'string' ? request.body.name.trim() : '';
+  const email = typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : '';
+  const password = typeof request.body?.password === 'string' ? request.body.password : '';
+
+  if (!name || !email || !password) {
+    return response.status(400).json({ success: false, message: 'Name, email, and password are required.' });
+  }
+  if (!emailPattern.test(email)) {
+    return response.status(400).json({ success: false, message: 'Please provide a valid email address.' });
+  }
+  if (password.length < 8) {
+    return response.status(400).json({ success: false, message: 'Password must be at least 8 characters long.' });
+  }
+
+  try {
+    const existingUser = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return response.status(409).json({ success: false, message: 'A user with this email already exists.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const admin = await createAdminInDb({ name, email, passwordHash, organizationId: request.organizationId });
+    return response.status(201).json({
+      success: true,
+      admin,
+      message: 'Admin account created successfully. Share the temporary login credentials securely with the administrator.'
+    });
+  } catch (error) {
+    if (error?.code === '23505') {
+      return response.status(409).json({ success: false, message: 'A user with this email already exists.' });
+    }
+    return response.status(500).json({ success: false, message: 'Unable to create admin account.' });
+  }
+}
 
 export async function listUsers(request, response) {
   const search = typeof request.query.search === 'string' ? request.query.search.trim() : '';
@@ -46,8 +85,8 @@ export async function deleteUser(request, response) {
       return response.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    if (userToDel.role === 'ADMIN') {
-      return response.status(403).json({ success: false, message: 'Admin users cannot be deleted.' });
+    if (userToDel.role === 'ADMIN' || userToDel.role === 'SUPER_ADMIN') {
+      return response.status(403).json({ success: false, message: 'Administrator accounts cannot be deleted here.' });
     }
 
     await deleteUserById(id, userToDel.email, request.organizationId);

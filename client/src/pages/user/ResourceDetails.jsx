@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useOrganization } from '../../context/OrganizationContext';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -9,6 +10,7 @@ import { format, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 
 export default function ResourceDetails({ resource, isOpen, onClose }) {
   const navigate = useNavigate();
+  const { organization } = useOrganization();
   const [formData, setFormData] = useState({
     date: '',
     startTime: '',
@@ -98,7 +100,7 @@ export default function ResourceDetails({ resource, isOpen, onClose }) {
       setSuccess(true);
       setTimeout(() => {
         onClose();
-        navigate('/app/bookings');
+        navigate(`/org/${organization.slug}/app/bookings`);
       }, 1500);
 
     } catch (err) {

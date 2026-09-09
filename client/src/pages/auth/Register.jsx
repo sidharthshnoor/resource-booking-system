@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganization } from '../../context/OrganizationContext';
 import Button from '../../components/ui/Button';
 
 export default function Register() {
   const { register } = useAuth();
+  const { organization } = useOrganization();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -42,9 +44,10 @@ export default function Register() {
       await register({
         name: formData.name,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        organizationSlug: organization.slug
       });
-      navigate('/app/dashboard');
+      navigate(`/org/${organization.slug}/app/dashboard`);
     } catch (err) {
       setError(err.message || 'Failed to register');
     } finally {
@@ -180,7 +183,7 @@ export default function Register() {
       <div className="login-divider"><span>or</span></div>
 
       <div className="register-account-link">
-        Already have an account? <Link to="/login">Sign in here</Link>
+        Already have an account? <Link to={`/org/${organization.slug}/login`}>Sign in here</Link>
       </div>
     </div>
   );

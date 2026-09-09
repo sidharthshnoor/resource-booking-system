@@ -5,7 +5,7 @@ import { useOrganization } from '../context/OrganizationContext';
 import Card from '../components/ui/Card';
 
 export default function AuthLayout() {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, user, loading } = useAuth();
   const { organization } = useOrganization();
   const location = useLocation();
   const isLoginPage = location.pathname.endsWith('/login');
@@ -21,6 +21,12 @@ export default function AuthLayout() {
 
   // If already authenticated, redirect to appropriate dashboard
   if (isAuthenticated) {
+    if (user?.role === 'SUPER_ADMIN') {
+      return <Navigate to="/super-admin/dashboard" replace />;
+    }
+    if (isAdmin && user?.must_change_password) {
+      return <Navigate to={`/org/${organization.slug}/admin/settings`} replace />;
+    }
     if (isAdmin) {
       return <Navigate to={`/org/${organization.slug}/admin/dashboard`} replace />;
     }

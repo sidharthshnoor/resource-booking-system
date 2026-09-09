@@ -58,6 +58,10 @@ const adminService = {
     return api.get(`/admin/users${query ? `?${query}` : ''}`);
   },
 
+  async createAdmin({ name, email, password }) {
+    return api.post('/admin/users', { name, email, password });
+  },
+
   async updateUserStatus(id, status) {
     if (USE_MOCK) {
       return new Promise(resolve => {

@@ -1,5 +1,6 @@
-BEGIN;
-
+-- Repair/compatibility migration for databases where 005 was applied before
+-- auth_tokens.organization_id was fully created, backfilled, and constrained.
+-- On a clean 005 install its guarded operations are intentionally no-ops.
 -- Add organization_id to auth_tokens
 ALTER TABLE auth_tokens ADD COLUMN IF NOT EXISTS organization_id BIGINT;
 
@@ -29,5 +30,3 @@ END $$;
 
 -- Add Index
 CREATE INDEX IF NOT EXISTS auth_tokens_organization_id_idx ON auth_tokens (organization_id);
-
-COMMIT;

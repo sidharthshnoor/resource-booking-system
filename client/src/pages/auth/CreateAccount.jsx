@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, useParams } from 'react-router-dom';
 import { Lock, User, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import authService from '../../services/auth.service';
 import Button from '../../components/ui/Button';
@@ -7,6 +7,8 @@ import Button from '../../components/ui/Button';
 export default function CreateAccount() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { slug } = useParams();
+  const loginPath = slug ? `/org/${slug}/login` : '/login';
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get('token');
 
@@ -70,7 +72,7 @@ export default function CreateAccount() {
           {success}
         </p>
         
-        <Button onClick={() => navigate('/login')} fullWidth className="login-submit-button">
+        <Button onClick={() => navigate(loginPath)} fullWidth className="login-submit-button">
           Go to Login
         </Button>
       </div>

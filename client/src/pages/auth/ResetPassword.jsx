@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, useParams } from 'react-router-dom';
 import { Lock, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import authService from '../../services/auth.service';
 import Button from '../../components/ui/Button';
@@ -7,6 +7,9 @@ import Button from '../../components/ui/Button';
 export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { slug } = useParams();
+  const loginPath = slug ? `/org/${slug}/login` : '/login';
+  const forgotPasswordPath = slug ? `/org/${slug}/forgot-password` : '/login';
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get('token');
 
@@ -87,7 +90,7 @@ export default function ResetPassword() {
           </div>
           <h2 className="reset-title">Password Changed Successfully</h2>
           <p className="reset-subtitle">{success}</p>
-          <Button onClick={() => navigate('/login')} fullWidth className="reset-submit-button">Go to Login</Button>
+          <Button onClick={() => navigate(loginPath)} fullWidth className="reset-submit-button">Go to Login</Button>
         </div>
       </div>
     );
@@ -115,7 +118,7 @@ export default function ResetPassword() {
           <div className="reset-expired">
             <h2>Reset link expired</h2>
             <p>This password reset link is no longer valid.</p>
-            <Button onClick={() => navigate('/forgot-password')} fullWidth className="reset-secondary-button">
+            <Button onClick={() => navigate(forgotPasswordPath)} fullWidth className="reset-secondary-button">
               Request New Reset Link
             </Button>
           </div>
@@ -166,7 +169,7 @@ export default function ResetPassword() {
           </>
         )}
 
-        <Link to="/login" className="reset-back-link">Back to Login</Link>
+        <Link to={loginPath} className="reset-back-link">Back to Login</Link>
       </div>
     </div>
   );

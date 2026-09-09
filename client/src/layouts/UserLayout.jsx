@@ -24,6 +24,10 @@ export default function UserLayout() {
     return <Navigate to={`/org/${organization.slug}/login`} replace />;
   }
 
+  if (user.role === 'SUPER_ADMIN') {
+    return <Navigate to="/super-admin/dashboard" replace />;
+  }
+
   if (user.organization_id !== organization.id) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 p-4">

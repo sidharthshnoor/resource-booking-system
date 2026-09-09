@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import resourceService from '../../services/resource.service';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -8,6 +9,7 @@ import { Search, MapPin, Users, Info } from 'lucide-react';
 import ResourceDetails from './ResourceDetails';
 
 export default function BrowseResources() {
+  const location = useLocation();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +26,12 @@ export default function BrowseResources() {
     try {
       const res = await resourceService.getAllResources();
       setResources(res.resources);
+      if (location.state?.resourceId) {
+        const resourceToBook = res.resources.find(resource => resource.id === location.state.resourceId);
+        if (resourceToBook) {
+          setSelectedResource(resourceToBook);
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {

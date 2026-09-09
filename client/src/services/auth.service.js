@@ -37,8 +37,13 @@ const authService = {
     }
     
     // Real implementation
-    await api.post('/auth/register', userData);
-    const loginRes = await this.login({ email: userData.email, password: userData.password });
+    const { organizationSlug, ...registrationData } = userData;
+    await api.post(`/auth/register/${encodeURIComponent(organizationSlug)}`, registrationData);
+    const loginRes = await this.login({
+      email: userData.email,
+      password: userData.password,
+      organizationSlug
+    });
     return loginRes;
   },
   
@@ -162,6 +167,13 @@ const authService = {
   async resetPassword(data) {
     if (USE_MOCK) return { success: true };
     return api.post('/auth/reset-password', data);
+  },
+
+  async changePassword(data) {
+    return api.post('/auth/change-password', {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword
+    });
   }
 };
 

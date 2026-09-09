@@ -33,7 +33,11 @@ export default function Login() {
     try {
       const payload = { ...formData, organizationSlug: organization.slug };
       const user = await login(payload);
-      if (user.role === 'ADMIN') {
+      if (user.role === 'SUPER_ADMIN') {
+        navigate('/super-admin/dashboard');
+      } else if (user.role === 'ADMIN' && user.must_change_password) {
+        navigate(`/org/${organization.slug}/admin/settings`);
+      } else if (user.role === 'ADMIN') {
         navigate(`/org/${organization.slug}/admin/dashboard`);
       } else {
         navigate(`/org/${organization.slug}/app/dashboard`);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganization } from '../../context/OrganizationContext';
 import bookingService from '../../services/booking.service';
 import resourceService from '../../services/resource.service';
 import Card from '../../components/ui/Card';
@@ -11,6 +12,8 @@ import { format } from 'date-fns';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { organization } = useOrganization();
+  const navigate = useNavigate();
   const [recentBookings, setRecentBookings] = useState([]);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +63,7 @@ export default function Dashboard() {
         <Card>
           <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-4)' }}>
             <h3 style={{ margin: 0 }}>Upcoming Bookings</h3>
-            <Link to="/app/bookings" className="text-label" style={{ fontWeight: 600 }}>View All</Link>
+            <Link to={`/org/${organization.slug}/app/bookings`} className="text-label" style={{ fontWeight: 600 }}>View All</Link>
           </div>
           
           {recentBookings.length === 0 ? (
@@ -97,7 +100,7 @@ export default function Dashboard() {
         <Card>
           <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-4)' }}>
             <h3 style={{ margin: 0 }}>Popular Resources</h3>
-            <Link to="/app/resources" className="text-label" style={{ fontWeight: 600 }}>Browse All</Link>
+            <Link to={`/org/${organization.slug}/app/resources`} className="text-label" style={{ fontWeight: 600 }}>Browse All</Link>
           </div>
           
           <div className="flex flex-col gap-4">
@@ -110,9 +113,13 @@ export default function Dashboard() {
                     {resource.location}
                   </div>
                 </div>
-                <Link to={`/app/resources`}>
-                  <Button variant="secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>Book</Button>
-                </Link>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/org/${organization.slug}/app/resources`, { state: { resourceId: resource.id } })}
+                  style={{ padding: '4px 12px', fontSize: '0.75rem' }}
+                >
+                  Book
+                </Button>
               </div>
             ))}
           </div>

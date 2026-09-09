@@ -37,6 +37,10 @@ export default function AdminLayout() {
     return <Navigate to={`/org/${organization.slug}/login`} replace />;
   }
 
+  if (user.role === 'SUPER_ADMIN') {
+    return <Navigate to="/super-admin/dashboard" replace />;
+  }
+
   if (user.organization_id !== organization.id) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 p-4">
@@ -50,6 +54,10 @@ export default function AdminLayout() {
 
   if (!isAdmin) {
     return <Navigate to={`/org/${organization.slug}/app/dashboard`} replace />;
+  }
+
+  if (user.must_change_password && !location.pathname.endsWith('/admin/settings')) {
+    return <Navigate to={`/org/${organization.slug}/admin/settings`} replace />;
   }
 
   const navGroups = [

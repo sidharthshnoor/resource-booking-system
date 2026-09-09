@@ -27,7 +27,7 @@ export async function requireAuth(request, response, next) {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, role, organization_id, created_at, updated_at FROM users WHERE id = $1',
+      'SELECT id, name, email, role, status, organization_id, must_change_password, created_at, updated_at FROM users WHERE id = $1',
       [payload.sub]
     );
 
@@ -39,6 +39,12 @@ export async function requireAuth(request, response, next) {
     }
 
     request.user = sanitizeUser(result.rows[0]);
+    if (request.user.status === 'DEACTIVATED') {
+      return response.status(403).json({
+        success: false,
+        message: 'This account has been deactivated.'
+      });
+    }
     return next();
   } catch (error) {
     return response.status(401).json({
@@ -54,6 +60,13 @@ export function requireAdmin(request, response, next) {
       success: false,
       message: 'Access denied. Administrator privileges required.'
     });
+  }
+  return next();
+}
+
+export function requirePasswordChangeComplete(request, response, next) {
+  if (request.user?.role === 'ADMIN' && request.user.must_change_password) {
+    return response.status(403).json({ success: false, message: 'Password update required.' });
   }
   return next();
 }

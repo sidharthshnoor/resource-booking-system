@@ -37,8 +37,8 @@ export async function sendEmail({ to, subject, text }) {
   }
 }
 
-export async function sendInvitationEmail(email, token) {
-  const inviteLink = `${env.frontendUrl}/create-account?token=${token}`;
+export async function sendInvitationEmail(email, token, organizationSlug) {
+  const inviteLink = `${env.frontendUrl}/org/${encodeURIComponent(organizationSlug)}/create-account?token=${token}`;
   
   const text = `Hello,
 

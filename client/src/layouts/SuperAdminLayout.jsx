@@ -20,7 +20,7 @@ export default function SuperAdminLayout() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/super-admin/login" replace />;
   }
 
   if (user.role !== 'SUPER_ADMIN') {
