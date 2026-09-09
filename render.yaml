@@ -16,7 +16,10 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        sync: false
+        fromService:
+          name: resource-booking-client
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -32,11 +35,14 @@ services:
     name: resource-booking-client
     runtime: static
     rootDir: client
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && VITE_API_URL="${BACKEND_URL}/api" npm run build
     staticPublishPath: dist
     envVars:
-      - key: VITE_API_URL
-        sync: false
+      - key: BACKEND_URL
+        fromService:
+          name: resource-booking-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
     routes:
       - type: rewrite
         source: /*
