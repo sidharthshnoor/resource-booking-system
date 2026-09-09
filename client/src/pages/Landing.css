@@ -20,7 +20,6 @@ html {
   color: var(--c-main-text);
   background-color: var(--c-white);
   line-height: 1.5;
-  overflow-x: hidden;
   height: 100vh;
   overflow-y: auto;
 }
@@ -2231,19 +2230,9 @@ html {
 .showcase-dashboard .showcase-view:nth-child(3) .col-span-2 > div { padding: 11px; }
 
 
-/* =========================================================
-   LANDING HERO REFERENCE LAYOUT FIX
-   Keeps the existing design/content and fixes only the
-   desktop hero alignment, sizing and scroll container.
-   ========================================================= */
-
-/* Let the document, rather than a nested 100vh container,
-   own the vertical scroll. This prevents odd scroll/anchor
-   positioning on the landing page. */
 .landing-page {
   height: auto;
   min-height: 100vh;
-  overflow-x: hidden;
   overflow-y: visible;
 }
 
@@ -2287,8 +2276,6 @@ html {
     height: auto;
   }
 
-  /* Keep all four cards positioned relative to the image.
-     They never affect the hero's normal document flow. */
   .landing-hero .status-card {
     position: absolute;
   }
@@ -2314,14 +2301,10 @@ html {
   }
 }
 
-/* =========================================================
-   MOBILE/TABLET — preserve stacked responsive behavior
-   ========================================================= */
 @media (max-width: 900px) {
   .landing-page {
     height: auto;
     min-height: 100vh;
-    overflow-x: hidden;
     overflow-y: visible;
   }
 
@@ -2335,9 +2318,175 @@ html {
   }
 }
 
-/* Avoid the reveal animation changing the perceived hero
-   position while the page is loading. It only fades/slides
-   visually and never changes layout dimensions. */
 .landing-hero .reveal-on-scroll {
   will-change: opacity, transform;
+}
+
+@media (max-width: 560px) {
+  .landing-container,
+  .landing-header .landing-container,
+  .landing-hero .landing-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .landing-page h1,
+  .landing-page h2,
+  .landing-page h3,
+  .landing-page p,
+  .story-text,
+  .resources-text,
+  .cta-content,
+  .footer-col {
+    overflow-wrap: anywhere;
+  }
+
+  .landing-header { height: 62px; }
+  .landing-header .landing-container { gap: 8px; }
+  .landing-header .logo-text { display: none; }
+  .landing-auth-links { flex: 0 0 auto; gap: 6px; }
+  .landing-auth-links .btn {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .landing-hero { padding: 34px 0 40px; }
+  .hero-headline { font-size: clamp(1.9rem, 10vw, 2.35rem); }
+  .hero-description { font-size: 1rem; margin-bottom: 24px; }
+  .hero-actions,
+  .cta-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-actions .btn,
+  .cta-actions .btn { width: 100%; }
+  .hero-trust { padding-top: 18px; gap: 12px; }
+  .trust-item { min-width: 0; }
+
+  .hero-image-wrapper { width: 100%; max-width: 100%; gap: 10px; }
+  .hero-image { width: 100%; max-width: 100%; }
+  .status-card { min-width: 0; max-width: 100%; }
+  .sc-info { min-width: 0; }
+  .sc-info strong, .sc-time { overflow-wrap: anywhere; }
+
+  .landing-intro,
+  .landing-resources,
+  .landing-booking,
+  .landing-experience,
+  .landing-trust { padding: 44px 0; }
+  .intro-grid,
+  .resources-grid,
+  .exp-grid { gap: 28px; }
+  .intro-content h2,
+  .resources-text h2 { font-size: 1.7rem; margin-bottom: 24px; }
+  .story-list { gap: 22px; }
+  .story-item { gap: 14px; }
+
+  .intro-dashboard,
+  .mock-dashboard.showcase-dashboard {
+    width: 100%;
+    max-width: 100%;
+  }
+  .mock-dashboard.showcase-dashboard { height: 440px; }
+  .showcase-dashboard .mock-sidebar {
+    width: 42px;
+    min-width: 42px;
+    padding: 10px 5px;
+    align-items: center;
+  }
+  .showcase-dashboard .mock-sidebar .mock-logo { padding: 0; margin-bottom: 10px; }
+  .showcase-dashboard .mock-sidebar .mock-logo:not(.logo-icon-sm),
+  .showcase-dashboard .mock-nav-item { font-size: 0; }
+  .showcase-dashboard .mock-nav-item { padding: 7px; }
+  .showcase-dashboard .mock-nav-item svg { margin: 0; flex: 0 0 auto; }
+  .showcase-dashboard .showcase-view { padding: 8px; }
+  .showcase-dashboard .mock-header p,
+  .showcase-dashboard .mock-user,
+  .showcase-dashboard .ps-toolbar .ps-select span,
+  .showcase-dashboard .ps-toolbar .ps-btn span { display: none; }
+  .showcase-dashboard .mock-title,
+  .showcase-dashboard .mock-title.text-lg { font-size: 13px; }
+  .showcase-dashboard .ps-toolbar { gap: 4px; }
+  .showcase-dashboard .ps-toolbar > div { padding: 5px; }
+  .showcase-dashboard .ps-toolbar .ps-select { max-width: none; }
+  .showcase-dashboard .ps-stats-row { gap: 4px; }
+  .showcase-dashboard .ps-stat-card { padding: 5px; }
+  .showcase-dashboard .ps-stat-card > div > div:last-child,
+  .showcase-dashboard .ps-stat-card > span { display: none; }
+  .showcase-dashboard .stat-icon { padding: 5px; }
+  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 { gap: 4px; }
+  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .p-3 { padding: 4px; }
+  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .text-xs,
+  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .mock-badge,
+  .showcase-dashboard .showcase-view:first-child > .bg-teal-light\/30 { display: none; }
+
+  .mock-table-header,
+  .calendar-header,
+  .footer-bottom { gap: 10px; flex-wrap: wrap; }
+  .mock-table-header,
+  .mock-table-toolbar { padding-left: 12px; padding-right: 12px; }
+  .mock-th-title { font-size: 1rem; }
+  .mock-btn { padding: 6px 8px; white-space: nowrap; }
+  .mock-tabs { flex-wrap: wrap; gap: 3px; }
+  .mock-tab { padding: 5px 7px; font-size: 0.65rem; }
+  .table-wrapper { overflow: visible; }
+  .mock-table { table-layout: fixed; }
+  .mock-table th,
+  .mock-table td {
+    padding: 7px 4px;
+    font-size: 0.56rem;
+    overflow-wrap: anywhere;
+    vertical-align: top;
+  }
+  .mock-table td:nth-child(2),
+  .mock-table td:nth-child(3),
+  .mock-table td:nth-child(4),
+  .mock-table td:last-child { font-size: 0.52rem; }
+  .mock-table .mock-badge { display: inline-block; padding: 3px; font-size: 0.5rem; }
+
+  .booking-infographic { width: 100%; gap: 22px; }
+  .annotation-left,
+  .annotations-right { width: 100%; }
+  .annotation-box { width: 100%; max-width: 100%; padding: 16px; }
+  .mock-calendar { width: 100%; max-width: 100%; min-width: 0; border-radius: 12px; }
+  .calendar-header { padding: 12px; justify-content: center; }
+  .cal-nav { gap: 8px; font-size: 0.9rem; }
+  .cal-views span { padding: 5px 8px; font-size: 0.7rem; }
+  .calendar-grid-wrapper { height: 320px; padding: 0 6px 8px; }
+  .cal-times { width: 34px; padding-top: 48px; }
+  .cal-times span { padding-right: 5px; font-size: 0.58rem; }
+  .cal-days { min-width: 0; padding-top: 10px; }
+  .day-header { margin-bottom: 10px; }
+  .day-header span { font-size: 0.55rem; }
+  .day-header strong { font-size: 0.75rem; }
+  .cal-col.active .day-header strong { width: 20px; height: 20px; }
+  .cal-event { left: 2px; right: 2px; padding: 3px; }
+  .cal-event strong, .cal-event span, .cal-unavailable { font-size: 0.48rem; overflow-wrap: anywhere; }
+
+  .exp-side { padding: 18px; min-width: 0; }
+  .mini-dashboard { width: 100%; height: auto; min-height: 330px; }
+  .mini-sidebar { width: 36px; min-width: 36px; padding: 10px 0; }
+  .mini-main { min-width: 0; padding: 10px; }
+  .mini-content-row { flex-direction: column; gap: 8px; }
+  .mini-calendar-widget { width: 100%; }
+  .mini-item, .mini-item-row, .mini-stats, .mr-cards { min-width: 0; }
+  .mini-item { gap: 5px; padding: 6px; }
+  .mini-item-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; font-size: 0.55rem; }
+  .mini-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .ms-box { padding: 6px; }
+  .mr-cards { flex-direction: column; }
+  .mr-card { padding: 6px; flex-direction: row; justify-content: space-between; }
+
+  .trust-heading { margin-bottom: 28px !important; }
+  .trust-features { align-items: stretch; flex-direction: column; gap: 14px; }
+  .tf-item { justify-content: flex-start; }
+  .landing-cta { padding: 56px 0; }
+  .footer-grid { gap: 32px; }
+  .footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .footer-bottom { align-items: flex-start; flex-direction: column; }
 }

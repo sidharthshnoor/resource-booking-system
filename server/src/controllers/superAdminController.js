@@ -47,13 +47,18 @@ export async function createOrganization(request, response) {
   const logo = typeof request.body?.logo === 'string' ? request.body.logo.trim() : null;
   const adminName = typeof request.body?.adminName === 'string' ? request.body.adminName.trim() : '';
   const adminEmail = typeof request.body?.adminEmail === 'string' ? request.body.adminEmail.trim().toLowerCase() : '';
+  const adminPassword = typeof request.body?.adminPassword === 'string' ? request.body.adminPassword : '';
 
   if (!name || !slug) {
     return buildError(response, 400, 'Organization name and slug are required.');
   }
 
-  if (!adminName || !adminEmail) {
-    return buildError(response, 400, 'Admin name and email are required.');
+  if (!adminName || !adminEmail || !adminPassword) {
+    return buildError(response, 400, 'Admin name, email, and password are required.');
+  }
+
+  if (adminPassword.length < 8) {
+    return buildError(response, 400, 'Password must be at least 8 characters long.');
   }
 
   // Basic slug validation: only alphanumeric and hyphens
@@ -87,9 +92,7 @@ export async function createOrganization(request, response) {
 
     const newOrgId = orgResult.rows[0].id;
 
-    // Generate a secure unguessable dummy password
-    const dummyPassword = crypto.randomBytes(64).toString('hex');
-    const passwordHash = await bcrypt.hash(dummyPassword, 12);
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
 
     // Create the admin user
     const insertUserResult = await client.query(
@@ -99,36 +102,14 @@ export async function createOrganization(request, response) {
       [adminName, adminEmail, passwordHash, newOrgId]
     );
 
-    const newUserId = insertUserResult.rows[0].id;
-
-    // Generate a secure PASSWORD_RESET token valid for 24 hours
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = hashToken(rawToken);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    await client.query(
-      `INSERT INTO auth_tokens (type, email, user_id, token_hash, expires_at, organization_id)
-       VALUES ('PASSWORD_RESET', $1, $2, $3, $4, $5)`,
-      [adminEmail, newUserId, tokenHash, expiresAt, newOrgId]
-    );
-
     await client.query('COMMIT');
 
-    let emailSent = false;
-    try {
-      await sendPasswordResetEmail(adminEmail, rawToken);
-      emailSent = true;
-    } catch (err) {
-      console.error('Failed to send provisioned admin password reset email:', err);
-    }
-
+    // Never return password or password_hash in the response
     return response.status(201).json({
       success: true,
       organization: orgResult.rows[0],
       admin: insertUserResult.rows[0],
-      message: emailSent 
-        ? 'Organization created and administrator successfully provisioned.'
-        : 'Organization created successfully, but there was an error sending the invitation email.'
+      message: 'Organization created and administrator successfully provisioned. Share the temporary password securely with the administrator.'
     });
 
   } catch (error) {
