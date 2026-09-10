@@ -111,7 +111,7 @@ export async function deleteResourceHandler(request, response) {
     return response.json({ success: true, message: 'Resource deleted successfully.' });
   } catch (error) {
     if (error?.code === '23503') {
-      return errorResponse(response, 409, 'Resource cannot be deleted because it has bookings.');
+      return errorResponse(response, 409, 'Cannot delete this resource because it has existing bookings. Please deactivate the resource instead.');
     }
     return errorResponse(response, 500, 'Unable to delete resource at this time.');
   }
