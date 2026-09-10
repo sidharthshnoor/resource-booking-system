@@ -2456,9 +2456,11 @@ html {
   /* ---------- Mock 1: Showcase dashboard (750 × 540) ---------- */
   .intro-dashboard {
     width: 100%;
+    min-width: 0;
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    overflow: hidden;
   }
 
   .mock-dashboard.showcase-dashboard {
@@ -2468,6 +2470,47 @@ html {
     min-height: 0 !important;
     flex: 0 0 750px;
     zoom: var(--mock-dashboard-scale);
+  }
+
+  /* Mobile-only showcase carousel.
+     Reuses the existing showcase-view elements; desktop/laptop behavior is unchanged. */
+  .showcase-dashboard .showcase-main {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+  }
+
+  .showcase-dashboard .showcase-main::-webkit-scrollbar {
+    display: none;
+  }
+
+  .showcase-dashboard .showcase-view {
+    position: relative;
+    inset: auto;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    overflow: hidden;
+  }
+
+  /* The carousel owns horizontal movement on mobile; the page must not. */
+  .landing-intro .intro-dashboard {
+    min-width: 0;
+    overflow: hidden;
   }
 
   /* ---------- Mock 2: Resource table (700 × 400) ---------- */
