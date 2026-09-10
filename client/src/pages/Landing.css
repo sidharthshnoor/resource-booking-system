@@ -2437,10 +2437,11 @@ html {
 }
 /* ============================================================
    MOBILE MOCKUPS
-   Keep existing mockup dimensions. On phones, oversized mockups
-   can be swiped horizontally INSIDE their own visible frame.
-   The page itself remains vertically scrollable.
+   Scale the complete preview as one unit so width and height
+   shrink together with the available mobile viewport.
+   Desktop/laptop styles are untouched.
    ============================================================ */
+
 @media (max-width: 830px) {
   .landing-intro,
   .landing-resources,
@@ -2449,21 +2450,15 @@ html {
     overflow-x: hidden;
   }
 
+  /* Available content width follows the landing container:
+     32px total side space on phones, 64px on wider tablets. */
+
   /* ---------- Mock 1: Showcase dashboard (750 × 540) ---------- */
   .intro-dashboard {
     width: 100%;
-    max-width: 100%;
-    display: block;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    touch-action: pan-x pan-y;
-    scrollbar-width: none;
-  }
-
-  .intro-dashboard::-webkit-scrollbar {
-    display: none;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   .mock-dashboard.showcase-dashboard {
@@ -2472,58 +2467,66 @@ html {
     height: 540px !important;
     min-height: 0 !important;
     flex: 0 0 750px;
-    zoom: 1 !important;
+    zoom: var(--mock-dashboard-scale);
   }
 
   /* ---------- Mock 2: Resource table (700 × 400) ---------- */
   .resources-visual {
     width: 100%;
-    max-width: 100%;
-    display: block;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    touch-action: pan-x pan-y;
-    scrollbar-width: none;
-  }
-
-  .resources-visual::-webkit-scrollbar {
-    display: none;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   .mock-table-ui {
     width: 700px !important;
     max-width: none !important;
     flex: 0 0 700px;
-    zoom: 1 !important;
+    zoom: var(--mock-table-scale);
   }
 
   /* ---------- Mock 3: Booking calendar (840 × 490) ---------- */
-  .mock-calendar {
-    width: 840px !important;
-    max-width: none !important;
-    zoom: 1 !important;
-    transform: none !important;
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /* ---------- Mock 4/5: Mini dashboards (400 × 280) ---------- */
-  .exp-ui {
+  /*
+     MOBILE ONLY:
+     Keep the calendar at its original 840px design width and make
+     the booking section itself the horizontal scroll frame.
+     The rest of the landing page remains vertically scrollable.
+  */
+  .booking-infographic {
     width: 100%;
     max-width: 100%;
-    display: block;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     touch-action: pan-x pan-y;
     scrollbar-width: none;
+
+    /* The calendar must start from the left edge of this scroll frame. */
+    align-items: flex-start;
   }
 
-  .exp-ui::-webkit-scrollbar {
+  .booking-infographic::-webkit-scrollbar {
     display: none;
+  }
+
+  .mock-calendar {
+    width: 840px !important;
+    min-width: 840px !important;
+    max-width: none !important;
+    flex: 0 0 840px !important;
+    zoom: 1 !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* ---------- Mock 4/5: Mini dashboards (400 × 280) ---------- */
+  .exp-ui {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   .mini-dashboard {
@@ -2531,28 +2534,19 @@ html {
     height: 280px !important;
     min-height: 0 !important;
     flex: 0 0 400px;
-    zoom: 1 !important;
+    zoom: var(--mock-mini-scale);
   }
 
   :root {
     --mock-mobile-width: calc(100vw - 64px);
-    --mock-dashboard-scale: 1;
-    --mock-table-scale: 1;
-    --mock-calendar-scale: 1;
-    --mock-mini-scale: 1;
-  }
-}
 
-/* Phones: keep the original mockup sizes; only the visible
-   viewport gets narrower. Horizontal movement happens inside
-   the mockup wrapper, not on the landing page itself. */
-@media (max-width: 560px) {
-  :root {
-    --mock-mobile-width: calc(100vw - 40px);
-    --mock-dashboard-scale: 1;
-    --mock-table-scale: 1;
-    --mock-calendar-scale: 1;
-    --mock-mini-scale: 1;
+    /* scale = available width / designed width, computed directly via
+       calc() division so the formula can't drift out of sync with the
+       design widths (750 / 700 / 840 / 400) or the container padding. */
+    --mock-dashboard-scale: clamp(0.42, calc(var(--mock-mobile-width) / 750), 1);
+    --mock-table-scale: clamp(0.42, calc(var(--mock-mobile-width) / 700), 1);
+    --mock-calendar-scale: clamp(0.42, calc(var(--mock-mobile-width) / 840), 1);
+    --mock-mini-scale: clamp(0.42, calc(var(--mock-mobile-width) / 400), 1);
   }
 }
 
