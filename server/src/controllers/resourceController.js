@@ -117,7 +117,7 @@ export async function deleteResourceHandler(request, response) {
       constraint: error?.constraint
     });
 
-    if (error?.code === '23503') {
+    if (error?.code === '23503' || error?.code === '23001') {
       return errorResponse(
         response,
         409,
