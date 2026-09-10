@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+
 html {
   scroll-behavior: smooth;
 }
@@ -34,7 +35,6 @@ html {
   padding: 0 40px;
 }
 
-/* Offset for fixed header smooth scroll */
 .landing-page section,
 .landing-page footer {
   scroll-margin-top: 70px;
@@ -217,8 +217,6 @@ html {
 
 /* 2. HERO */
 .landing-hero {
-  /* At the 1366px reference width this places the image 50px below the
-     70px navbar once the two columns are vertically balanced. */
   padding: 40px 0;
   background-color: var(--c-white);
   display: flex;
@@ -1775,9 +1773,6 @@ html {
   .hero-trust { gap: 14px; }
 }
 
-/* ========================================= */
-/* SHOWCASE UTILITY CLASSES (Generated)      */
-/* ========================================= */
 .flex { display: flex; }
 .flex-col { display: flex; flex-direction: column; }
 .flex-1 { flex: 1; }
@@ -2159,8 +2154,6 @@ html {
 .showcase-dashboard .ps-stat-card { padding: 10px; }
 .showcase-dashboard .stat-icon { padding: 7px; }
 
-/* The Discover cards now use the expanded workspace rather than squeezing
-   their labels and imagery into narrow columns. */
 .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 { gap: 10px; margin-bottom: 10px; }
 .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 img { height: 70px !important; }
 .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .p-3 { padding: 9px; }
@@ -2186,7 +2179,6 @@ html {
   overflow-y: visible;
 }
 
-/* Desktop reference layout (matches the supplied 1366px target). */
 @media (min-width: 901px) {
   .landing-hero {
     padding: 50px 0 56px;
@@ -2386,7 +2378,7 @@ html {
   .story-list { gap: 22px; }
   .story-item { gap: 14px; }
 
-  /* Mock UIs: kept at designed dimensions — proportional scaling applied in the block below */
+
   .footer-bottom { gap: 10px; flex-wrap: wrap; }
 
   .booking-infographic { width: 100%; gap: 22px; }
@@ -2435,12 +2427,7 @@ html {
     font-size: 0.55rem;
   }
 }
-/* ============================================================
-   MOBILE MOCKUPS
-   Keep existing mockup dimensions. On phones, oversized mockups
-   can be swiped horizontally INSIDE their own visible frame.
-   The page itself remains vertically scrollable.
-   ============================================================ */
+
 @media (max-width: 830px) {
   .landing-intro,
   .landing-resources,
@@ -2449,7 +2436,7 @@ html {
     overflow-x: hidden;
   }
 
-  /* ---------- Mock 1: Showcase dashboard (750 × 540) ---------- */
+
   .intro-dashboard {
     width: 100%;
     max-width: 100%;
@@ -2475,7 +2462,6 @@ html {
     zoom: 1 !important;
   }
 
-  /* ---------- Mock 2: Resource table (700 × 400) ---------- */
   .resources-visual {
     width: 100%;
     max-width: 100%;
@@ -2499,7 +2485,6 @@ html {
     zoom: 1 !important;
   }
 
-  /* ---------- Mock 3: Booking calendar (840 × 490) ---------- */
   .mock-calendar {
     width: 840px !important;
     max-width: none !important;
@@ -2509,7 +2494,6 @@ html {
     margin-right: 0;
   }
 
-  /* ---------- Mock 4/5: Mini dashboards (400 × 280) ---------- */
   .exp-ui {
     width: 100%;
     max-width: 100%;
@@ -2543,9 +2527,7 @@ html {
   }
 }
 
-/* Phones: keep the original mockup sizes; only the visible
-   viewport gets narrower. Horizontal movement happens inside
-   the mockup wrapper, not on the landing page itself. */
+
 @media (max-width: 560px) {
   :root {
     --mock-mobile-width: calc(100vw - 40px);
@@ -2556,9 +2538,6 @@ html {
   }
 }
 
-/* Phones: landing container has 20px left/right padding. Covers all
-   phone widths (including very small ones) with a single formula, so
-   there's no separate sub-430px block to fall out of sync. */
 @media (max-width: 560px) {
   :root {
     --mock-mobile-width: calc(100vw - 40px);
