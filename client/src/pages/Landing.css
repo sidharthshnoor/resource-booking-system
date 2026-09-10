@@ -1676,13 +1676,6 @@ html {
     gap: 40px;
   }
 
-  /* Keep the hero side-by-side on roomy tablets; the remaining sections
-     continue to use their existing single-column layout. */
-  .landing-hero .hero-grid {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    gap: 36px;
-  }
-
   .landing-hero .landing-container,
   .landing-header .landing-container {
     padding-left: 32px;
@@ -1759,48 +1752,12 @@ html {
     font-size: 1.75rem;
   }
 
-  .mock-calendar {
-    width: 100%;
-    max-width: 500px;
-  }
-
   .annotations-right {
     flex-direction: column;
   }
   
   .footer-links {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .landing-hero {
-    padding: 42px 0 48px;
-  }
-
-  .landing-hero .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 36px;
-  }
-
-  .hero-content { max-width: 600px; }
-
-  .hero-visual { justify-content: center; }
-
-  .hero-image-wrapper {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    max-width: 600px;
-  }
-
-  .hero-image { grid-column: 1 / -1; }
-
-  .status-card {
-    position: static;
-    min-width: 0;
-    width: 100%;
-    padding: 12px;
   }
 }
 
@@ -1816,9 +1773,8 @@ html {
   .landing-auth-links .btn { padding-left: 14px; padding-right: 14px; }
   .hero-actions { align-items: stretch; flex-direction: column; gap: 12px; }
   .hero-trust { gap: 14px; }
-  .hero-image-wrapper { grid-template-columns: 1fr; }
-  .hero-image { grid-column: auto; }
 }
+
 /* ========================================= */
 /* SHOWCASE UTILITY CLASSES (Generated)      */
 /* ========================================= */
@@ -2169,13 +2125,7 @@ html {
   .intro-dashboard { margin: 0 auto; }
 }
 
-@media (max-width: 680px) {
-  .mock-dashboard.showcase-dashboard { height: 500px; }
-  .showcase-dashboard .mock-sidebar { width: 118px; min-width: 118px; padding: 12px 7px; }
-  .showcase-dashboard .mock-nav-item { font-size: 8px; gap: 5px; padding: 6px; }
-  .showcase-dashboard .mock-sidebar .mock-logo { font-size: 9px; }
-  .showcase-dashboard .showcase-view { padding: 9px; }
-}
+
 
 /* Wider desktop presentation: retain the compact fixed-height preview while
    allocating the additional space to the application workspace. */
@@ -2310,11 +2260,46 @@ html {
 
   .landing-hero {
     min-height: auto;
+    padding: 42px 0 48px;
+  }
+
+  .landing-hero .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .landing-hero .hero-content {
+    max-width: 600px;
+  }
+
+  .landing-hero .hero-visual {
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
   }
 
   .landing-hero .hero-image-wrapper {
-    width: 100%;
+    position: relative;
+    display: block;
+    width: min(100%, 600px);
     max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .landing-hero .hero-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 15 / 11;
+  }
+
+  .landing-hero .status-card {
+    position: absolute;
+    width: auto;
+    min-width: 0;
+    max-width: 180px;
+    padding: 9px 11px;
+    box-sizing: border-box;
   }
 }
 
@@ -2368,9 +2353,23 @@ html {
   .hero-trust { padding-top: 18px; gap: 12px; }
   .trust-item { min-width: 0; }
 
-  .hero-image-wrapper { width: 100%; max-width: 100%; gap: 10px; }
-  .hero-image { width: 100%; max-width: 100%; }
-  .status-card { min-width: 0; max-width: 100%; }
+  .landing-hero .hero-image-wrapper { width: calc(100% - 16px); max-width: 500px; }
+  .landing-hero .hero-image { width: 100%; max-width: 100%; }
+  .landing-hero .status-card {
+    max-width: 145px;
+    padding: 7px 9px;
+    gap: 7px;
+    border-radius: 8px;
+  }
+  .landing-hero .sc-icon { padding: 6px; flex: 0 0 auto; }
+  .landing-hero .sc-icon svg { width: 13px; height: 13px; }
+  .landing-hero .sc-info strong { font-size: 0.68rem; }
+  .landing-hero .sc-status,
+  .landing-hero .sc-time { font-size: 0.6rem; }
+  .landing-hero .card-1 { top: 5%; left: 2%; right: auto; bottom: auto; }
+  .landing-hero .card-2 { top: 38%; right: 2%; left: auto; bottom: auto; }
+  .landing-hero .card-3 { bottom: 8%; left: 2%; right: auto; top: auto; }
+  .landing-hero .card-4 { bottom: 3%; right: 2%; left: auto; top: auto; }
   .sc-info { min-width: 0; }
   .sc-info strong, .sc-time { overflow-wrap: anywhere; }
 
@@ -2387,100 +2386,15 @@ html {
   .story-list { gap: 22px; }
   .story-item { gap: 14px; }
 
-  .intro-dashboard,
-  .mock-dashboard.showcase-dashboard {
-    width: 100%;
-    max-width: 100%;
-  }
-  .mock-dashboard.showcase-dashboard { height: 440px; }
-  .showcase-dashboard .mock-sidebar {
-    width: 42px;
-    min-width: 42px;
-    padding: 10px 5px;
-    align-items: center;
-  }
-  .showcase-dashboard .mock-sidebar .mock-logo { padding: 0; margin-bottom: 10px; }
-  .showcase-dashboard .mock-sidebar .mock-logo:not(.logo-icon-sm),
-  .showcase-dashboard .mock-nav-item { font-size: 0; }
-  .showcase-dashboard .mock-nav-item { padding: 7px; }
-  .showcase-dashboard .mock-nav-item svg { margin: 0; flex: 0 0 auto; }
-  .showcase-dashboard .showcase-view { padding: 8px; }
-  .showcase-dashboard .mock-header p,
-  .showcase-dashboard .mock-user,
-  .showcase-dashboard .ps-toolbar .ps-select span,
-  .showcase-dashboard .ps-toolbar .ps-btn span { display: none; }
-  .showcase-dashboard .mock-title,
-  .showcase-dashboard .mock-title.text-lg { font-size: 13px; }
-  .showcase-dashboard .ps-toolbar { gap: 4px; }
-  .showcase-dashboard .ps-toolbar > div { padding: 5px; }
-  .showcase-dashboard .ps-toolbar .ps-select { max-width: none; }
-  .showcase-dashboard .ps-stats-row { gap: 4px; }
-  .showcase-dashboard .ps-stat-card { padding: 5px; }
-  .showcase-dashboard .ps-stat-card > div > div:last-child,
-  .showcase-dashboard .ps-stat-card > span { display: none; }
-  .showcase-dashboard .stat-icon { padding: 5px; }
-  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 { gap: 4px; }
-  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .p-3 { padding: 4px; }
-  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .text-xs,
-  .showcase-dashboard .showcase-view:first-child > .grid.grid-cols-4 .mock-badge,
-  .showcase-dashboard .showcase-view:first-child > .bg-teal-light\/30 { display: none; }
-
-  .mock-table-header,
-  .calendar-header,
+  /* Mock UIs: kept at designed dimensions — proportional scaling applied in the block below */
   .footer-bottom { gap: 10px; flex-wrap: wrap; }
-  .mock-table-header,
-  .mock-table-toolbar { padding-left: 12px; padding-right: 12px; }
-  .mock-th-title { font-size: 1rem; }
-  .mock-btn { padding: 6px 8px; white-space: nowrap; }
-  .mock-tabs { flex-wrap: wrap; gap: 3px; }
-  .mock-tab { padding: 5px 7px; font-size: 0.65rem; }
-  .table-wrapper { overflow: visible; }
-  .mock-table { table-layout: fixed; }
-  .mock-table th,
-  .mock-table td {
-    padding: 7px 4px;
-    font-size: 0.56rem;
-    overflow-wrap: anywhere;
-    vertical-align: top;
-  }
-  .mock-table td:nth-child(2),
-  .mock-table td:nth-child(3),
-  .mock-table td:nth-child(4),
-  .mock-table td:last-child { font-size: 0.52rem; }
-  .mock-table .mock-badge { display: inline-block; padding: 3px; font-size: 0.5rem; }
 
   .booking-infographic { width: 100%; gap: 22px; }
   .annotation-left,
   .annotations-right { width: 100%; }
   .annotation-box { width: 100%; max-width: 100%; padding: 16px; }
-  .mock-calendar { width: 100%; max-width: 100%; min-width: 0; border-radius: 12px; }
-  .calendar-header { padding: 12px; justify-content: center; }
-  .cal-nav { gap: 8px; font-size: 0.9rem; }
-  .cal-views span { padding: 5px 8px; font-size: 0.7rem; }
-  .calendar-grid-wrapper { height: 320px; padding: 0 6px 8px; }
-  .cal-times { width: 34px; padding-top: 48px; }
-  .cal-times span { padding-right: 5px; font-size: 0.58rem; }
-  .cal-days { min-width: 0; padding-top: 10px; }
-  .day-header { margin-bottom: 10px; }
-  .day-header span { font-size: 0.55rem; }
-  .day-header strong { font-size: 0.75rem; }
-  .cal-col.active .day-header strong { width: 20px; height: 20px; }
-  .cal-event { left: 2px; right: 2px; padding: 3px; }
-  .cal-event strong, .cal-event span, .cal-unavailable { font-size: 0.48rem; overflow-wrap: anywhere; }
 
   .exp-side { padding: 18px; min-width: 0; }
-  .mini-dashboard { width: 100%; height: auto; min-height: 330px; }
-  .mini-sidebar { width: 36px; min-width: 36px; padding: 10px 0; }
-  .mini-main { min-width: 0; padding: 10px; }
-  .mini-content-row { flex-direction: column; gap: 8px; }
-  .mini-calendar-widget { width: 100%; }
-  .mini-item, .mini-item-row, .mini-stats, .mr-cards { min-width: 0; }
-  .mini-item { gap: 5px; padding: 6px; }
-  .mini-item-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; font-size: 0.55rem; }
-  .mini-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
-  .ms-box { padding: 6px; }
-  .mr-cards { flex-direction: column; }
-  .mr-card { padding: 6px; flex-direction: row; justify-content: space-between; }
 
   .trust-heading { margin-bottom: 28px !important; }
   .trust-features { align-items: stretch; flex-direction: column; gap: 14px; }
@@ -2489,4 +2403,137 @@ html {
   .footer-grid { gap: 32px; }
   .footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
   .footer-bottom { align-items: flex-start; flex-direction: column; }
+}
+
+
+@media (max-width: 380px) {
+  .landing-hero .hero-image-wrapper {
+    width: calc(100% - 12px);
+  }
+
+  .landing-hero .status-card {
+    max-width: 125px;
+    padding: 6px 7px;
+    gap: 5px;
+  }
+
+  .landing-hero .sc-icon {
+    padding: 5px;
+  }
+
+  .landing-hero .sc-icon svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .landing-hero .sc-info strong {
+    font-size: 0.62rem;
+  }
+
+  .landing-hero .sc-status,
+  .landing-hero .sc-time {
+    font-size: 0.55rem;
+  }
+}
+/* ============================================================
+   MOBILE MOCKUPS
+   Scale the complete preview as one unit so width and height
+   shrink together with the available mobile viewport.
+   Desktop/laptop styles are untouched.
+   ============================================================ */
+
+@media (max-width: 830px) {
+  .landing-intro,
+  .landing-resources,
+  .landing-booking,
+  .landing-experience {
+    overflow-x: hidden;
+  }
+
+  /* Available content width follows the landing container:
+     32px total side space on phones, 64px on wider tablets. */
+
+  /* ---------- Mock 1: Showcase dashboard (750 × 540) ---------- */
+  .intro-dashboard {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .mock-dashboard.showcase-dashboard {
+    width: 750px !important;
+    max-width: none !important;
+    height: 540px !important;
+    min-height: 0 !important;
+    flex: 0 0 750px;
+    zoom: var(--mock-dashboard-scale);
+  }
+
+  /* ---------- Mock 2: Resource table (700 × 400) ---------- */
+  .resources-visual {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .mock-table-ui {
+    width: 700px !important;
+    max-width: none !important;
+    flex: 0 0 700px;
+    zoom: var(--mock-table-scale);
+  }
+
+  /* ---------- Mock 3: Booking calendar (840 × 490) ---------- */
+  .mock-calendar {
+    width: 840px !important;
+    max-width: none !important;
+    zoom: var(--mock-calendar-scale);
+    transform: none !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ---------- Mock 4/5: Mini dashboards (400 × 280) ---------- */
+  .exp-ui {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .mini-dashboard {
+    width: 400px !important;
+    height: 280px !important;
+    min-height: 0 !important;
+    flex: 0 0 400px;
+    zoom: var(--mock-mini-scale);
+  }
+
+  :root {
+    --mock-mobile-width: calc(100vw - 64px);
+
+    /* scale = available width / designed width, computed directly via
+       calc() division so the formula can't drift out of sync with the
+       design widths (750 / 700 / 840 / 400) or the container padding. */
+    --mock-dashboard-scale: clamp(0.42, calc(var(--mock-mobile-width) / 750), 1);
+    --mock-table-scale: clamp(0.42, calc(var(--mock-mobile-width) / 700), 1);
+    --mock-calendar-scale: clamp(0.42, calc(var(--mock-mobile-width) / 840), 1);
+    --mock-mini-scale: clamp(0.42, calc(var(--mock-mobile-width) / 400), 1);
+  }
+}
+
+/* Phones: landing container has 20px left/right padding. Covers all
+   phone widths (including very small ones) with a single formula, so
+   there's no separate sub-430px block to fall out of sync. */
+@media (max-width: 560px) {
+  :root {
+    --mock-mobile-width: calc(100vw - 40px);
+
+    --mock-dashboard-scale: clamp(0.42, calc(var(--mock-mobile-width) / 750), 1);
+    --mock-table-scale: clamp(0.42, calc(var(--mock-mobile-width) / 700), 1);
+    --mock-calendar-scale: clamp(0.42, calc(var(--mock-mobile-width) / 840), 1);
+    --mock-mini-scale: clamp(0.42, calc(var(--mock-mobile-width) / 400), 1);
+  }
 }
