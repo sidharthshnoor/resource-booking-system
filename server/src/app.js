@@ -11,6 +11,7 @@ import { env } from './config/env.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use((request, response, next) => {
 	const requestOrigin = request.headers.origin;
