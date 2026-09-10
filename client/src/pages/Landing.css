@@ -2456,9 +2456,8 @@ html {
   /* ---------- Mock 1: Showcase dashboard (750 × 540) ---------- */
   .intro-dashboard {
     width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    display: block;
+    overflow: hidden;
   }
 
   .mock-dashboard.showcase-dashboard {
@@ -2466,8 +2465,49 @@ html {
     max-width: none !important;
     height: 540px !important;
     min-height: 0 !important;
-    flex: 0 0 750px;
+    margin: 0 auto;
     zoom: var(--mock-dashboard-scale);
+  }
+
+  /*
+     Mobile-only horizontal carousel for the existing showcase views.
+     Each existing .showcase-view becomes one complete swipeable slide.
+     No JSX/data/components are added or changed.
+  */
+  .showcase-dashboard .showcase-main {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .showcase-dashboard .showcase-main::-webkit-scrollbar {
+    display: none;
+  }
+
+  .showcase-dashboard .showcase-view {
+    position: relative !important;
+    inset: auto !important;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    overflow: hidden;
+  }
+
+  .showcase-dashboard .showcase-view.view-active {
+    z-index: 1;
   }
 
   /* ---------- Mock 2: Resource table (700 × 400) ---------- */
