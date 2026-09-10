@@ -8,6 +8,7 @@ import adminUserRoutes from './routes/adminUserRoutes.js';
 import organizationRoutes from './routes/organizationRoutes.js';
 import superAdminRoutes from './routes/superAdminRoutes.js';
 import { env } from './config/env.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
 
@@ -30,6 +31,9 @@ app.use((request, response, next) => {
 });
 
 app.use(express.json());
+
+app.use('/api', apiLimiter);
+
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/bookings', adminBookingRoutes);

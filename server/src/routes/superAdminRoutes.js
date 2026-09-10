@@ -17,7 +17,6 @@ const router = express.Router();
 // All routes here require both authentication and SUPER_ADMIN role
 router.use(requireAuth, requireSuperAdmin);
 
-// Organization Management
 router.get('/organizations', listOrganizations);
 router.post('/organizations', createOrganization);
 router.get('/organizations/:id', getOrganizationDetails);

@@ -622,6 +622,38 @@ Common HTTP status codes used:
 
 ---
 
+## Security
+
+### Server-Side Rate Limiting
+
+The API uses **[express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)** for server-side rate limiting. All rate-limiting state is held in memory on the server — it cannot be bypassed by manipulating client-side state.
+
+| Endpoint / Scope         | Limit | Window | Purpose |
+|--------------------------|------:|-------:|---------|
+| General `/api/*`         | 300 requests | 15 minutes | Broad abuse and DDoS protection |
+| `POST /api/auth/login`   | 10 requests  | 15 minutes | Brute-force credential attack prevention |
+| `POST /api/auth/register/:slug` | 5 requests | 15 minutes | Mass account creation prevention |
+| `POST /api/auth/forgot-password` | 5 requests | 15 minutes | Email spam / enumeration prevention |
+| `POST /api/auth/resend-reset` | 5 requests | 15 minutes | Email spam prevention |
+
+When any limit is exceeded, the server responds with **HTTP 429 Too Many Requests** and a JSON body:
+
+```json
+{
+  "success": false,
+  "error": "TOO_MANY_REQUESTS",
+  "message": "Too many requests. Please wait a few minutes and try again."
+}
+```
+
+No HTML error pages are returned. Stack traces and internal details are never exposed.
+
+### Production / Proxy Considerations
+
+The application is deployed on **Render**, which acts as a reverse proxy. When deploying on Render (or behind any trusted reverse proxy), review whether `app.set('trust proxy', N)` is required to ensure client IPs are identified correctly for rate limiting. See [`render.yaml`](./render.yaml) and the [express-rate-limit proxy documentation](https://express-rate-limit.mintlify.app/guides/troubleshooting-proxy-issues) before deploying to a new environment.
+
+---
+
 ## License
 
 License: Not specified.
